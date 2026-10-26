@@ -4,176 +4,169 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Reisebegleiter</title>
+<meta name="apple-mobile-web-app-title" content="Reise">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#4f46e5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-title" content="Reise">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#0a84ff">
+<title>Reisebegleiter</title>
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1d21;--mu:#6b7280;--ac:#0a84ff;--ln:#e5e7eb;--ok:#22a06b;--dg:#d93025;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0f12;--card:#1a1c21;--tx:#f2f3f5;--mu:#9aa0a9;--ln:#2a2d34}}
-:root[data-theme="dark"]{--bg:#0e0f12;--card:#1a1c21;--tx:#f2f3f5;--mu:#9aa0a9;--ln:#2a2d34}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,"Segoe UI",sans-serif;padding-bottom:84px}
-header{padding:18px 16px 8px}
-header h1{margin:0;font-size:24px}
-.cd{margin-top:6px;color:var(--mu);font-size:14px}
-.cd b{color:var(--ac)}
-.hd{display:flex;gap:8px;margin-top:10px}
+:root{--bg:#f3f4fb;--card:#fff;--tx:#14162b;--mu:#6c7089;--ac:#5b5bf0;--ln:#e8e9f3;--ok:#22a06b;--dg:#e5484d;--sh:0 4px 18px rgba(30,30,80,.08);box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root{--bg:#0d0e17;--card:#171926;--tx:#f1f2f8;--mu:#9a9db5;--ln:#262938;--sh:0 4px 18px rgba(0,0,0,.4)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,sans-serif;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 input,textarea,button{font:inherit;color:var(--tx)}
-input,textarea{width:100%;padding:11px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--card)}
-main{padding:8px 16px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:13px 14px;margin:10px 0}
-.card h3{margin:0 0 4px;font-size:17px}
-.card .m{color:var(--mu);font-size:14px}
-.ref{display:inline-block;margin-top:6px;padding:3px 9px;border-radius:8px;background:var(--bg);font:600 14px ui-monospace,Menlo,monospace;letter-spacing:.5px}
-.thumb{margin-top:8px;width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--ln)}
-.btn{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:600}
-.btn.g{background:var(--bg);color:var(--tx);border:1px solid var(--ln)}
-.btn.d{background:var(--dg)}
-.add{width:100%;margin-top:6px}
-.empty{text-align:center;color:var(--mu);padding:36px 10px}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;background:none;border:0;padding:9px 0 8px;font-size:11px;color:var(--mu)}
-nav button span{display:block;font-size:22px}
-nav button.on{color:var(--ac)}
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:5}
-.sheet.show{display:flex}
-.sheet>div{background:var(--bg);width:100%;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.sheet label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+input,textarea{width:100%;padding:12px;border:1px solid var(--ln);border-radius:12px;background:var(--card)}
+.hero{background:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#06b6d4);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 34px;border-radius:0 0 30px 30px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:13px;opacity:.85;letter-spacing:.6px;text-transform:uppercase}
+.top button{background:rgba(255,255,255,.2);border:0;border-radius:50%;width:36px;height:36px;font-size:17px}
+.hero h1{margin:10px 0 2px;font-size:28px}
+.cd{display:flex;align-items:baseline;gap:8px}.cd b{font-size:44px;line-height:1}.cd span{opacity:.9}
+main{padding:0 16px;margin-top:-18px}
+.card{background:var(--card);border-radius:18px;padding:14px;margin:12px 0;box-shadow:var(--sh)}
+.it{display:flex;gap:12px;align-items:flex-start}
+.ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none}
+.it h3{margin:0;font-size:17px}.m{color:var(--mu);font-size:14px}
+.body{flex:1;min-width:0}
+.ref{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:9px;background:var(--bg);font:700 14px ui-monospace,Menlo,monospace;letter-spacing:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--bg);border-radius:20px;padding:5px 11px;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600;text-align:center;display:block}
+.btn.g{background:var(--card);color:var(--tx);box-shadow:var(--sh)}.btn.d{background:var(--dg)}
+.gap{margin-top:10px;width:100%}
+.empty{text-align:center;color:var(--mu);padding:30px 10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stats div{background:var(--card);border-radius:16px;padding:12px 4px;text-align:center;box-shadow:var(--sh);font-size:12px;color:var(--mu)}
+.stats b{display:block;font-size:22px;color:var(--tx)}
+h2.s{font-size:15px;margin:18px 4px 0;color:var(--mu);text-transform:uppercase;letter-spacing:.5px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);box-shadow:0 -4px 20px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom,0px);z-index:3}
+nav button{flex:1;background:none;border:0;padding:9px 0 8px;font-size:10.5px;color:var(--mu)}
+nav button span{display:block;font-size:21px}nav button.on{color:var(--ac);font-weight:700}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:5}.sheet.show{display:flex}
+.sheet>div{background:var(--bg);width:100%;max-height:92%;overflow:auto;border-radius:24px 24px 0 0;padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet label{display:block;font-size:13px;color:var(--mu);margin:12px 0 4px}
 .row{display:flex;gap:8px;margin-top:14px}.row .btn{flex:1}
-.full{position:fixed;inset:0;background:#fff;z-index:9;display:none;align-items:center;justify-content:center}
-.full.show{display:flex}.full img{max-width:100%;max-height:100%}
-.full button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;background:#000;color:#fff;border:0;border-radius:20px;padding:8px 14px}
-.pk{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--ln)}
-.pk input[type=checkbox]{width:24px;height:24px;flex:none;accent-color:var(--ok)}
-.pk.done span{text-decoration:line-through;color:var(--mu)}
-.pk span{flex:1}.pk i{color:var(--mu);font-style:normal;padding:4px 8px}
-.bar{height:8px;background:var(--ln);border-radius:6px;overflow:hidden;margin:8px 0 4px}
-.bar div{height:100%;background:var(--ok);width:0;transition:width .3s}
+.fr{display:flex;justify-content:space-between;gap:8px;background:var(--card);border-radius:12px;padding:10px 12px;margin-top:6px}
+.fr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr i{font-style:normal;color:var(--mu)}
+.full{position:fixed;inset:0;background:#fff;z-index:9;display:none;flex-direction:column}.full.show{display:flex}
+.tb{display:flex;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px;background:#111}
+.tb button{background:#333;color:#fff;border:0;border-radius:20px;padding:8px 14px}
+#fv{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;color:#111;text-align:center;padding:10px}
+#fv img{max-width:100%;max-height:100%}#fv iframe{width:100%;height:100%;border:0}
+.pk{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--ln)}
+.pk input{width:24px;height:24px;flex:none;accent-color:var(--ok)}
+.pk.done span{text-decoration:line-through;color:var(--mu)}.pk span{flex:1}.pk i{font-style:normal;color:var(--mu);padding:4px 8px}
+.bar{height:9px;background:var(--ln);border-radius:6px;overflow:hidden;margin:8px 0 2px}.bar div{height:100%;background:linear-gradient(90deg,#22a06b,#06b6d4);transition:width .3s}
+.busy,.toast{position:fixed;z-index:10;left:50%;transform:translateX(-50%);background:#111;color:#fff;border-radius:16px;padding:14px 20px;display:none;text-align:center;max-width:88%}
+.busy{top:42%}.toast{bottom:calc(100px + env(safe-area-inset-bottom,0px))}.busy.show,.toast.show{display:block}
 </style>
 </head>
 <body>
-<header>
-  <h1 id="tn">Meine Reise</h1>
-  <div class="cd" id="cd"></div>
-  <div class="hd"><button class="btn g" onclick="editTrip()">Reise bearbeiten</button></div>
-</header>
+<div class="hero"><div class="top"><span>Reisebegleiter</span><button onclick="settings()">⚙️</button></div>
+<h1 id="tn"></h1><div class="cd"><b id="cdn"></b><span id="cdl"></span></div></div>
 <main id="main"></main>
 <nav id="nav"></nav>
-
 <div class="sheet" id="sheet"><div id="form"></div></div>
-<div class="full" id="full"><button onclick="closeFull()">Schließen</button><img id="fimg" alt=""></div>
-
+<div class="full" id="full"><div class="tb"><button onclick="shareCur()">Teilen / Öffnen in …</button><button onclick="closeFull()">Schließen</button></div><div id="fv"></div></div>
+<div class="busy" id="busy"></div><div class="toast" id="toast"></div>
 <script>
 const TABS=[
- {k:'flights',n:'Flüge',e:'✈️',t:'Flug',f:{title:'Flug (z. B. EK 413 FRA → DXB)',date:'Abflug',date2:'Ankunft',ref:'Buchungscode',note:'Sitz, Gate, Terminal …'}},
- {k:'hotels',n:'Hotels',e:'🏨',t:'Hotel',f:{title:'Hotelname',date:'Check-in',date2:'Check-out',ref:'Buchungsnummer',note:'Adresse, Hinweise …'},dateOnly:true},
- {k:'visa',n:'Visa',e:'🛂',t:'Visum',f:{title:'Land / Visum-Art',date:'Gültig ab',date2:'Gültig bis',ref:'Antrags- / Visumsnummer',note:'Notizen'},dateOnly:true},
- {k:'pack',n:'Packliste',e:'🎒'}
-];
-const DEF=['Reisepass','Visum / ETA ausgedruckt','Flugtickets','Kreditkarte & Bargeld','Handy & Ladekabel','Powerbank','Reiseadapter','Medikamente','Kopfhörer','Sonnencreme','Zahnbürste & Hygiene','Kleidung für alle Tage','Auslandskrankenversicherung'];
-let S;
-try{S=JSON.parse(localStorage.getItem('reise')||'null')}catch(e){S=null}
+{k:'home',n:'Übersicht',e:'🏠'},
+{k:'flights',n:'Flüge',e:'✈️',t:'Flug',c:'#3b82f6',f:{title:'Flug (z. B. EK 413 FRA → DXB)',date:'Abflug',date2:'Ankunft',ref:'Buchungscode',note:'Sitz, Gate, Terminal …'}},
+{k:'hotels',n:'Hotels',e:'🏨',t:'Hotel',c:'#f59e0b',dateOnly:1,f:{title:'Hotelname',date:'Check-in',date2:'Check-out',ref:'Buchungsnummer',note:'Adresse, Hinweise …'}},
+{k:'visa',n:'Visa',e:'🛂',t:'Visum',c:'#10b981',dateOnly:1,f:{title:'Land / Visum-Art',date:'Gültig ab',date2:'Gültig bis',ref:'Antrags- / Visumsnummer',note:'Notizen'}},
+{k:'pack',n:'Packliste',e:'🎒'}];
+const K=['flights','hotels','visa'];
+const DEF=['Reisepass','Visum / ETA','Flugtickets','Kreditkarte & Bargeld','Handy & Ladekabel','Powerbank','Reiseadapter','Medikamente','Kopfhörer','Sonnencreme','Hygieneartikel','Kleidung','Auslandskrankenversicherung'];
+let S;try{S=JSON.parse(localStorage.getItem('reise')||'null')}catch(e){}
 S=S||{trip:{name:'Meine Reise',date:''},flights:[],hotels:[],visa:[],pack:[]};
-let tab='flights';
+let tab='home';
 const $=id=>document.getElementById(id);
-function save(){try{localStorage.setItem('reise',JSON.stringify(S))}catch(e){alert('Speicher voll – bitte ein paar Fotos löschen oder kleinere verwenden.')}}
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function fmt(v,dateOnly){if(!v)return'';const d=new Date(v);if(isNaN(d))return v;return dateOnly?d.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'}):d.toLocaleString('de-DE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
-
-function head(){
-  $('tn').textContent=S.trip.name||'Meine Reise';
-  const d=S.trip.date?Math.ceil((new Date(S.trip.date)-new Date().setHours(0,0,0,0))/864e5):null;
-  $('cd').innerHTML=d===null?'Abreisedatum noch nicht gesetzt':d>0?'Noch <b>'+d+' Tage</b> bis zur Abreise':d===0?'<b>Heute geht es los!</b>':'Reise läuft / vorbei';
-}
-function nav(){
-  $('nav').innerHTML=TABS.map(t=>`<button class="${t.k===tab?'on':''}" onclick="go('${t.k}')"><span>${t.e}</span>${t.n}</button>`).join('');
-}
-function go(k){tab=k;render()}
-function render(){head();nav();const t=TABS.find(x=>x.k===tab);$('main').innerHTML=tab==='pack'?renderPack():renderList(t)}
-
-function renderList(t){
-  const L=S[t.k];
-  let h=L.length?'':`<div class="empty">Noch keine Einträge.<br>Füge deinen ersten ${t.t} hinzu.</div>`;
-  L.forEach(i=>{
-    h+=`<div class="card" onclick="openForm('${t.k}','${i.id}')"><h3>${esc(i.title)}</h3>
-    <div class="m">${i.date?fmt(i.date,t.dateOnly):''}${i.date2?' → '+fmt(i.date2,t.dateOnly):''}</div>
-    ${i.note?`<div class="m">${esc(i.note)}</div>`:''}
-    ${i.ref?`<div class="ref">${esc(i.ref)}</div>`:''}
-    ${i.img?`<img class="thumb" src="${i.img}" alt="Dokument" onclick="event.stopPropagation();showFull('${t.k}','${i.id}')">`:''}</div>`;
-  });
-  return h+`<button class="btn add" onclick="openForm('${t.k}')">+ ${t.t} hinzufügen</button>`;
-}
-function renderPack(){
-  const L=S.pack,n=L.filter(x=>x.d).length,p=L.length?Math.round(n/L.length*100):0;
-  let h=`<div class="card"><b>${n} von ${L.length} gepackt</b><div class="bar"><div style="width:${p}%"></div></div></div>
-  <div style="display:flex;gap:8px"><input id="pi" placeholder="Neuer Gegenstand" onkeydown="if(event.key==='Enter')addPack()"><button class="btn" onclick="addPack()">+</button></div>
-  <div class="card" style="padding:4px 12px">`;
-  if(!L.length)h+='<div class="empty">Packliste ist leer.</div>';
-  L.forEach(i=>{h+=`<div class="pk ${i.d?'done':''}"><input type="checkbox" ${i.d?'checked':''} onchange="tog('${i.id}')"><span>${esc(i.t)}</span><i onclick="delPack('${i.id}')">✕</i></div>`});
-  h+='</div><div class="row">';
-  if(!L.length)h+='<button class="btn g" onclick="loadDef()">Vorschlag laden</button>';
-  else h+='<button class="btn g" onclick="resetPack()">Alles abhaken zurücksetzen</button>';
-  return h+'</div>';
-}
+function save(){try{localStorage.setItem('reise',JSON.stringify(S))}catch(e){alert('Speicher voll.')}}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}
+function busy(m){const b=$('busy');b.textContent=m||'';b.classList.toggle('show',!!m)}
+function fmt(v,d){if(!v)return'';const x=new Date(v);if(isNaN(x))return v;return d?x.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'}):x.toLocaleString('de-DE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+/* Dateispeicher (IndexedDB) */
+const DB=new Promise((ok,no)=>{const r=indexedDB.open('reise-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const tx=(m,fn)=>DB.then(d=>new Promise((ok,no)=>{const t=d.transaction('f',m),q=fn(t.objectStore('f'));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>no(t.error)}));
+const putF=o=>tx('readwrite',s=>s.put(o)),getF=id=>tx('readonly',s=>s.get(id)),delF=id=>tx('readwrite',s=>s.delete(id));
+const refs=id=>K.reduce((a,k)=>a+S[k].filter(i=>(i.files||[]).some(f=>f.id===id)).length,0);
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+(async()=>{let ch=0;for(const k of K)for(const i of S[k]){i.files=i.files||[];if(i.img){try{const b=await(await fetch(i.img)).blob(),id=uid();await putF({id,name:'Foto.jpg',type:'image/jpeg',blob:b});i.files.push({id,name:'Foto.jpg',type:'image/jpeg'})}catch(e){}delete i.img;ch=1}}if(ch){save();render()}})();
+function shrink(f,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?ok(b):no(new Error('Bild nicht lesbar')),'image/jpeg',q)};im.onerror=()=>no(new Error('Bild nicht lesbar'));im.src=u})}
+async function saveFile(f){let blob=f,type=f.type||'application/octet-stream',name=f.name||'Datei';if(type.startsWith('image/')){blob=await shrink(f,1600,.8);type='image/jpeg'}const id=uid();await putF({id,name,type,blob});return{id,name,type}}
+const ico=f=>f.type.startsWith('image/')?'🖼️':f.type==='application/pdf'?'📕':'📄';
+let vid='',vurl='';
+async function openFile(id){const f=await getF(id);if(!f)return alert('Datei nicht gefunden');vid=id;vurl=URL.createObjectURL(f.blob);
+ $('fv').innerHTML=f.type.startsWith('image/')?`<img src="${vurl}" alt="">`:f.type==='application/pdf'?`<iframe src="${vurl}"></iframe>`:'<p>Keine Vorschau möglich.<br>Tippe oben auf „Teilen / Öffnen in …“.</p>';$('full').classList.add('show')}
+function closeFull(){$('full').classList.remove('show');$('fv').innerHTML='';vurl&&URL.revokeObjectURL(vurl)}
+async function shareCur(){try{const f=await getF(vid);await navigator.share({files:[new File([f.blob],f.name,{type:f.type})]})}catch(e){}}
+/* Auslesen mit Claude */
+const PROMPT='Lies dieses Reisedokument. Antworte NUR mit JSON: {"items":[{"kind":"flights|hotels|visa","title":"","date":"","date2":"","ref":"","note":""}]}. flights: ein Eintrag je Flugsegment, title="Flugnummer Abflug → Ziel" (IATA-Codes), date=Abflug, date2=Ankunft (Format YYYY-MM-DDTHH:MM, Ortszeit), ref=Buchungscode, note=Passagier, Sitz, Gate, Terminal. hotels: title=Hotelname, date=Check-in, date2=Check-out (YYYY-MM-DD), ref=Buchungsnummer, note=Adresse. visa: title=Land und Visumart, date=gültig ab, date2=gültig bis (YYYY-MM-DD), ref=Nummer, note=Details. Unbekanntes leer lassen, nichts erfinden.';
+const b64=b=>new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.readAsDataURL(b)});
+async function ai(f){const key=localStorage.getItem('rk');if(!key){settings();throw new Error('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.')}
+ let type=f.type,blob=f;if(type.startsWith('image/')){blob=await shrink(f,1800,.85);type='image/jpeg'}else if(type!=='application/pdf')throw new Error('Auslesen geht nur mit Fotos und PDFs. Andere Dateien kannst du im Eintrag anhängen.');
+ const d=await b64(blob),blk={type:type==='application/pdf'?'document':'image',source:{type:'base64',media_type:type,data:d}};
+ const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:localStorage.getItem('rm')||'claude-sonnet-5-5',max_tokens:2000,messages:[{role:'user',content:[blk,{type:'text',text:PROMPT}]}]})});
+ const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||'Fehler '+r.status);
+ const m=j.content.map(c=>c.text||'').join('').match(/\{[\s\S]*\}/);if(!m)throw new Error('Keine Daten erkannt.');return JSON.parse(m[0]).items||[]}
+const nd=(v,t)=>!v?'':t.dateOnly?String(v).slice(0,10):String(v).length===10?v+'T00:00':String(v).slice(0,16);
+const sortL=k=>S[k].sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
+async function importDoc(inp){const f=inp.files[0];inp.value='';if(!f)return;busy('Dokument wird gelesen …');
+ try{const items=await ai(f);if(!items.length)throw new Error('Keine Reisedaten gefunden.');const fm=await saveFile(f);let first;
+  items.forEach(o=>{const k=K.includes(o.kind)?o.kind:'flights',t=TABS.find(x=>x.k===k),it={id:uid(),title:o.title||'Ohne Titel',date:nd(o.date,t),date2:nd(o.date2,t),ref:o.ref||'',note:o.note||'',files:[fm]};S[k].push(it);first=first||[k,it.id]});
+  K.forEach(sortL);save();busy();tab=first[0];render();toast(items.length+' Eintrag/Einträge angelegt – bitte kurz prüfen');openForm(first[0],first[1])}
+ catch(e){busy();alert(e.message)}}
+const impBtn=()=>`<label class="btn g gap" for="imp">📄 Aus Dokument / Foto einlesen</label><input id="imp" type="file" accept="image/*,application/pdf" hidden onchange="importDoc(this)">`;
+/* Anzeige */
+function head(){$('tn').textContent=S.trip.name||'Meine Reise';const d=S.trip.date?Math.ceil((new Date(S.trip.date)-new Date().setHours(0,0,0,0))/864e5):null;
+ $('cdn').textContent=d===null?'–':d>0?d:d===0?'🎉':'✓';$('cdl').textContent=d===null?'Abreisedatum in ⚙️ setzen':d>0?(d===1?'Tag bis zur Abreise':'Tage bis zur Abreise'):d===0?'Heute geht es los!':'Reise läuft / vorbei'}
+function nav(){$('nav').innerHTML=TABS.map(t=>`<button class="${t.k===tab?'on':''}" onclick="go('${t.k}')"><span>${t.e}</span>${t.n}</button>`).join('')}
+function go(k){tab=k;render();scrollTo(0,0)}
+function render(){head();nav();const t=TABS.find(x=>x.k===tab);$('main').innerHTML=tab==='home'?home():tab==='pack'?pack():list(t)}
+const chips=i=>(i.files||[]).length?`<div class="chips">${i.files.map(f=>`<span class="chip" onclick="event.stopPropagation();openFile('${f.id}')">${ico(f)} ${esc(f.name)}</span>`).join('')}</div>`:'';
+function card(t,i){return`<div class="card it" onclick="openForm('${t.k}','${i.id}')"><div class="ic" style="background:${t.c}22">${t.e}</div><div class="body"><h3>${esc(i.title)}</h3><div class="m">${fmt(i.date,t.dateOnly)}${i.date2?' → '+fmt(i.date2,t.dateOnly):''}</div>${i.note?`<div class="m">${esc(i.note)}</div>`:''}${i.ref?`<div class="ref">${esc(i.ref)}</div>`:''}${chips(i)}</div></div>`}
+function list(t){const L=S[t.k];return(L.length?L.map(i=>card(t,i)).join(''):`<div class="empty card">${t.e}<br>Noch kein ${t.t} gespeichert.</div>`)+`<button class="btn gap" onclick="openForm('${t.k}')">+ ${t.t} hinzufügen</button>`+impBtn()}
+function home(){const now=Date.now()-864e5,up=[];K.forEach(k=>S[k].forEach(i=>{if(i.date&&new Date(i.date)>=now)up.push([TABS.find(x=>x.k===k),i])}));up.sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
+ const P=S.pack,n=P.filter(x=>x.d).length,nf=K.reduce((a,k)=>a+S[k].reduce((b,i)=>b+(i.files||[]).length,0),0);
+ return`<div class="stats"><div><b>${S.flights.length}</b>Flüge</div><div><b>${S.hotels.length}</b>Hotels</div><div><b>${S.visa.length}</b>Visa</div><div><b>${nf}</b>Dateien</div></div>`+
+ `<label class="card it" for="imp"><div class="ic" style="background:#5b5bf022">📄</div><div class="body"><b>Dokument oder Foto einlesen</b><div class="m">Buchung, Ticket oder Visum wählen – die Daten werden automatisch eingetragen.</div></div></label><input id="imp" type="file" accept="image/*,application/pdf" hidden onchange="importDoc(this)">`+
+ `<h2 class="s">Als Nächstes</h2>`+(up.length?up.slice(0,5).map(([t,i])=>card(t,i)).join(''):'<div class="empty card">Keine anstehenden Termine.</div>')+
+ `<h2 class="s">Packliste</h2><div class="card" onclick="go('pack')"><b>${n} von ${P.length} gepackt</b><div class="bar"><div style="width:${P.length?Math.round(n/P.length*100):0}%"></div></div></div>`}
+function pack(){const L=S.pack,n=L.filter(x=>x.d).length;
+ let h=`<div class="card"><b>${n} von ${L.length} gepackt</b><div class="bar"><div style="width:${L.length?Math.round(n/L.length*100):0}%"></div></div></div><div style="display:flex;gap:8px"><input id="pi" placeholder="Neuer Gegenstand" onkeydown="if(event.key==='Enter')addPack()"><button class="btn" style="width:56px" onclick="addPack()">+</button></div><div class="card" style="padding:4px 14px">`;
+ if(!L.length)h+='<div class="empty">Packliste ist leer.</div>';
+ L.forEach(i=>h+=`<div class="pk ${i.d?'done':''}"><input type="checkbox" ${i.d?'checked':''} onchange="tog('${i.id}')"><span>${esc(i.t)}</span><i onclick="delPack('${i.id}')">✕</i></div>`);
+ return h+'</div>'+(L.length?'<button class="btn g gap" onclick="S.pack.forEach(i=>i.d=false);save();render()">Alle Haken zurücksetzen</button>':'<button class="btn g gap" onclick="DEF.forEach(t=>S.pack.push({id:uid(),t,d:false}));save();render()">Vorschlag laden</button>')}
 function addPack(){const v=$('pi').value.trim();if(!v)return;S.pack.push({id:uid(),t:v,d:false});save();render();setTimeout(()=>$('pi')&&$('pi').focus(),0)}
 function tog(id){const x=S.pack.find(i=>i.id===id);x.d=!x.d;save();render()}
 function delPack(id){S.pack=S.pack.filter(i=>i.id!==id);save();render()}
-function loadDef(){DEF.forEach(t=>S.pack.push({id:uid(),t,d:false}));save();render()}
-function resetPack(){S.pack.forEach(i=>i.d=false);save();render()}
-
-let cur=null,curImg='';
-function openForm(k,id){
-  const t=TABS.find(x=>x.k===k),it=id?S[k].find(i=>i.id===id):{};
-  cur={k,id};curImg=it.img||'';
-  const ty=t.dateOnly?'date':'datetime-local';
-  $('form').innerHTML=`<h2 style="margin:0">${id?t.t+' bearbeiten':t.t+' hinzufügen'}</h2>
-  <label>${t.f.title}</label><input id="f_title" value="${esc(it.title)}">
-  <label>${t.f.date}</label><input id="f_date" type="${ty}" value="${esc(it.date)}">
-  <label>${t.f.date2}</label><input id="f_date2" type="${ty}" value="${esc(it.date2)}">
-  <label>${t.f.ref}</label><input id="f_ref" value="${esc(it.ref)}" autocapitalize="characters">
-  <label>${t.f.note}</label><textarea id="f_note" rows="2">${esc(it.note)}</textarea>
-  <label>Ticket / Bestätigung als Foto oder Screenshot (offline griffbereit)</label>
-  <input type="file" accept="image/*" onchange="pickImg(this)">
-  <div id="pv">${curImg?`<img class="thumb" src="${curImg}" alt="">`:''}</div>
-  <div class="row"><button class="btn g" onclick="closeForm()">Abbrechen</button><button class="btn" onclick="saveForm()">Speichern</button></div>
-  ${id?'<div class="row"><button class="btn d" onclick="delItem()">Löschen</button></div>':''}`;
-  $('sheet').classList.add('show');
-}
+/* Formular */
+let cur,curFiles=[],added=[],gone=[];
+function openForm(k,id){const t=TABS.find(x=>x.k===k),it=id?S[k].find(i=>i.id===id):{},ty=t.dateOnly?'date':'datetime-local';
+ cur={k,id};curFiles=[...(it.files||[])];added=[];gone=[];
+ $('form').innerHTML=`<h2 style="margin:0">${t.t} ${id?'bearbeiten':'hinzufügen'}</h2><label>${t.f.title}</label><input id="f_title" value="${esc(it.title)}"><label>${t.f.date}</label><input id="f_date" type="${ty}" value="${esc(it.date)}"><label>${t.f.date2}</label><input id="f_date2" type="${ty}" value="${esc(it.date2)}"><label>${t.f.ref}</label><input id="f_ref" value="${esc(it.ref)}" autocapitalize="characters"><label>${t.f.note}</label><textarea id="f_note" rows="2">${esc(it.note)}</textarea>
+ <label>Dokumente (Fotos, PDFs, Tickets …) – bleiben offline verfügbar</label><div id="fl"></div><label class="btn g gap" for="addf" style="margin-top:8px">+ Datei hinzufügen</label><input id="addf" type="file" multiple hidden onchange="addFiles(this)">
+ <div class="row"><button class="btn g" onclick="cancelForm()">Abbrechen</button><button class="btn" onclick="saveForm()">Speichern</button></div>${id?'<div class="row"><button class="btn d" onclick="delItem()">Löschen</button></div>':''}`;
+ fileList();$('sheet').classList.add('show')}
+function fileList(){$('fl').innerHTML=curFiles.map((f,j)=>`<div class="fr"><span onclick="openFile('${f.id}')">${ico(f)} ${esc(f.name)}</span><i onclick="gone.push(curFiles.splice(${j},1)[0].id);fileList()">✕</i></div>`).join('')}
+async function addFiles(inp){busy('Wird gespeichert …');try{for(const f of inp.files){const m=await saveFile(f);curFiles.push(m);added.push(m.id)}}catch(e){alert(e.message)}inp.value='';busy();fileList()}
 function closeForm(){$('sheet').classList.remove('show')}
-function pickImg(inp){
-  const f=inp.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{const im=new Image();im.onload=()=>{
-    const m=1100,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');
-    c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-    curImg=c.toDataURL('image/jpeg',.75);$('pv').innerHTML=`<img class="thumb" src="${curImg}" alt="">`};im.src=r.result};
-  r.readAsDataURL(f);
-}
-function saveForm(){
-  const o={title:$('f_title').value.trim(),date:$('f_date').value,date2:$('f_date2').value,ref:$('f_ref').value.trim(),note:$('f_note').value.trim(),img:curImg};
-  if(!o.title){alert('Bitte einen Titel eingeben.');return}
-  const L=S[cur.k];
-  if(cur.id){Object.assign(L.find(i=>i.id===cur.id),o)}else{L.push({id:uid(),...o})}
-  L.sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
-  save();closeForm();render();
-}
-function delItem(){if(!confirm('Wirklich löschen?'))return;S[cur.k]=S[cur.k].filter(i=>i.id!==cur.id);save();closeForm();render()}
-function showFull(k,id){$('fimg').src=S[k].find(i=>i.id===id).img;$('full').classList.add('show')}
-function closeFull(){$('full').classList.remove('show')}
-function editTrip(){
-  $('form').innerHTML=`<h2 style="margin:0">Reise</h2>
-  <label>Name der Reise</label><input id="t_n" value="${esc(S.trip.name)}">
-  <label>Abreisedatum</label><input id="t_d" type="date" value="${esc(S.trip.date)}">
-  <div class="row"><button class="btn g" onclick="closeForm()">Abbrechen</button><button class="btn" onclick="saveTrip()">Speichern</button></div>`;
-  $('sheet').classList.add('show');
-}
-function saveTrip(){S.trip.name=$('t_n').value.trim()||'Meine Reise';S.trip.date=$('t_d').value;save();closeForm();render()}
+function cancelForm(){added.forEach(id=>refs(id)||delF(id));closeForm()}
+function saveForm(){const o={title:$('f_title').value.trim(),date:$('f_date').value,date2:$('f_date2').value,ref:$('f_ref').value.trim(),note:$('f_note').value.trim(),files:curFiles};
+ if(!o.title)return alert('Bitte einen Titel eingeben.');const L=S[cur.k];
+ if(cur.id)Object.assign(L.find(i=>i.id===cur.id),o);else L.push({id:uid(),...o});
+ sortL(cur.k);save();gone.forEach(id=>refs(id)||delF(id));added=[];closeForm();render()}
+function delItem(){if(!confirm('Wirklich löschen?'))return;const ids=S[cur.k].find(i=>i.id===cur.id).files.map(f=>f.id);S[cur.k]=S[cur.k].filter(i=>i.id!==cur.id);save();ids.forEach(id=>refs(id)||delF(id));closeForm();render()}
+function settings(){$('form').innerHTML=`<h2 style="margin:0">Einstellungen</h2><label>Name der Reise</label><input id="t_n" value="${esc(S.trip.name)}"><label>Abreisedatum</label><input id="t_d" type="date" value="${esc(S.trip.date)}">
+ <label>Claude-API-Schlüssel (fürs automatische Auslesen)</label><input id="t_k" type="password" value="${esc(localStorage.getItem('rk'))}" placeholder="sk-ant-…" autocapitalize="off">
+ <p class="m">Der Schlüssel bleibt nur auf diesem Gerät. Beim Auslesen wird das Dokument an Anthropic gesendet (Internet nötig, kostet wenige Cent; Schlüssel unter console.anthropic.com).</p><label>Modell</label><input id="t_m" value="${esc(localStorage.getItem('rm')||'claude-sonnet-5-5')}">
+ <div class="row"><button class="btn g" onclick="closeForm()">Abbrechen</button><button class="btn" onclick="saveSet()">Speichern</button></div>`;$('sheet').classList.add('show')}
+function saveSet(){S.trip.name=$('t_n').value.trim()||'Meine Reise';S.trip.date=$('t_d').value;localStorage.setItem('rk',$('t_k').value.trim());localStorage.setItem('rm',$('t_m').value.trim());save();closeForm();render()}
 render();
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
