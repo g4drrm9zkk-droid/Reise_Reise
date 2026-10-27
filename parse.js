@@ -1,0 +1,62 @@
+/* Lokale Auswertung von Reisedokumenten – reine Funktion, keine Netzwerkzugriffe. */
+(function(g){
+const MON={jan:1,januar:1,january:1,feb:2,februar:2,february:2,mär:3,mar:3,märz:3,maerz:3,march:3,apr:4,april:4,mai:5,may:5,jun:6,juni:6,june:6,jul:7,juli:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,okt:10,oct:10,oktober:10,october:10,nov:11,november:11,dez:12,dec:12,dezember:12,december:12};
+const AIR='EK LH LX OS SN BA AF KL IB VY FR U2 W6 TK QR EY SQ CX QF NZ VA JQ AA UA DL AC AY SK DY KE OZ JL NH TG MH GA PR CI BR AI 6E SV MS ET KQ SA LA AM AV CM B6 WN HA LO RO TP AZ EW 4U X3 HV BT FI A3 PC LS WK EN DS 9C MU CA CZ HU FM GF WY UL BG PK 3K TR AK FD OD VN QZ EI VS LG FZ G9 XQ S7 KM NK F9 WS PD RJ LY HY JU'.split(' ');
+const FLIGHT=new RegExp('\\b('+AIR.join('|')+')\\s?(\\d{2,4})\\b','g');
+const STOP=new Set(['THE','AND','FOR','PDF','USD','EUR','AUD','GBP','CHF','VAT','TAX','NET','ONE','TWO','SEE','NOT','YOU','ARE','WAS','PNR','TOP','ALL','APP','WEB','MWS']);
+const COUNTRIES=[['Australien','australia|australien'],['Neuseeland','new zealand|neuseeland'],['USA','united states|\\busa\\b|vereinigte staaten'],['Kanada','canada|kanada'],['Großbritannien','united kingdom|großbritannien|great britain'],['Japan','\\bjapan\\b'],['Thailand','thailand'],['Vietnam','vietnam'],['Indonesien','indonesia|indonesien'],['Indien','\\bindia\\b|indien'],['China','\\bchina\\b'],['Singapur','singapore|singapur'],['Malaysia','malaysia'],['Philippinen','philippin'],['Kambodscha','cambodia|kambodscha'],['Sri Lanka','sri lanka'],['Türkei','turkey|türkei|türkiye'],['Ägypten','egypt|ägypten'],['Marokko','morocco|marokko'],['Südafrika','south africa|südafrika'],['Kenia','kenya|kenia'],['Tansania','tanzania|tansania'],['Brasilien','brazil|brasilien'],['Mexiko','mexico|mexiko'],['Vereinigte Arabische Emirate','united arab emirates|\\buae\\b|vereinigte arabische'],['Schengen','schengen'],['Südkorea','south korea|südkorea'],['Jordanien','jordan'],['Nepal','\\bnepal\\b']];
+const MN=Object.keys(MON).sort((a,b)=>b.length-a.length).join('|');
+const R={iso:/(\d{4})-(\d{2})-(\d{2})/g,dmy:/(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})(?!\d)/g,sl:/(\d{1,2})\/(\d{1,2})\/(\d{4})/g,dm:new RegExp('(\\d{1,2})\\.?\\s?('+MN+')(?![A-Za-zäÄ])\\.?,?\\s?(\\d{4}|\\d{2})?(?!\\d)','gi'),md:new RegExp('(?<![A-Za-zäÄ])('+MN+')\\.?\\s(\\d{1,2})(?:st|nd|rd|th)?,?\\s(\\d{4})','gi'),tm:/(\d{1,2}):(\d{2})(?::\d{2})?\s?(AM|PM|am|pm)?/g};
+const p2=n=>String(n).padStart(2,'0');
+function iso(y,m,d){if(!(m>=1&&m<=12&&d>=1&&d<=31))return null;if(y==null){const now=new Date();y=now.getFullYear();if(new Date(y,m-1,d)<now-45*864e5)y++}return y+'-'+p2(m)+'-'+p2(d)}
+const y2=y=>{y=+y;return y<100?2000+y:y};
+function scan(s){const T=[];const add=(re,fn)=>{re.lastIndex=0;let m;while((m=re.exec(s))){const v=fn(m);if(v)T.push({i:m.index,e:m.index+m[0].length,t:v[0],v:v[1]})}};
+ add(R.iso,m=>['d',iso(+m[1],+m[2],+m[3])]);add(R.dmy,m=>['d',iso(y2(m[3]),+m[2],+m[1])]);add(R.sl,m=>['d',iso(+m[3],+m[2],+m[1])]);
+ add(R.dm,m=>{const mo=MON[m[2].toLowerCase()];return mo&&['d',iso(m[3]?y2(m[3]):null,mo,+m[1])]});
+ add(R.md,m=>{const mo=MON[m[1].toLowerCase()];return mo&&['d',iso(+m[3],mo,+m[2])]});
+ add(R.tm,m=>{let h=+m[1];const ap=(m[3]||'').toLowerCase();if(ap==='pm'&&h<12)h+=12;if(ap==='am'&&h===12)h=0;return h<24?['t',p2(h)+':'+m[2]]:null});
+ T.sort((a,b)=>a.i-b.i||b.e-a.e);const o=[];let end=-1;for(const t of T){if(t.i>=end&&t.v){o.push(t);end=t.e}}return o}
+const firstDate=s=>{const t=scan(s).find(x=>x.t==='d');return t?t.v:''};
+const after=(txt,re,n)=>{const m=re.exec(txt);return m?firstDate(txt.slice(m.index+m[0].length,m.index+m[0].length+(n||80))):''};
+function findRef(txt,labels,ok){const re=new RegExp('(?:'+labels+')\\s*[:#.]?\\s*([A-Za-z0-9][A-Za-z0-9\\-\\.]{4,19})','gi');let m;while((m=re.exec(txt))){const c=m[1].replace(/[.\-]+$/,'');if(c.length>=5&&ok.test(c))return c}return''}
+const FREF='buchungs\\s?(?:code|nummer|referenz)|booking\\s*(?:reference|ref\\.?|code|number)|confirmation\\s*(?:code|number|no\\.?)|reservation\\s*(?:code|number)|reservierungs\\s?(?:code|nummer)|bestätigungs\\s?(?:code|nummer)|\\bPNR\\b|record\\s*locator|buchung';
+function flightsOf(txt){
+ const ms=[...txt.matchAll(FLIGHT)],ref=findRef(txt,FREF,/^[A-Z0-9]{5,8}$/),pax=(txt.match(/\b([A-ZÄÖÜ]{2,}\/[A-ZÄÖÜ]{2,}(?: (?:MR|MRS|MS|MISS|MSTR|HERR|FRAU))?)/)||[])[1];
+ let c=ms.map((m,k)=>{const end=Math.min(k+1<ms.length?ms[k+1].index:txt.length,m.index+700),w=txt.slice(m.index,end),T=scan(w);const prevEnd=k?ms[k-1].index+ms[k-1][0].length:0,pre=scan(txt.slice(Math.max(prevEnd,m.index-100),m.index)).reverse(),lD=pre.find(x=>x.t==='d'),lT=pre.find(x=>x.t==='t'),preD=lD&&(!lT||lT.i<lD.i)?lD.v:'';
+  const ts=T.filter(x=>x.t==='t'),ds=T.filter(x=>x.t==='d'),dt=ts[0]?ts[0].v:'',at=ts[1]?ts[1].v:'',ad=ts[1]?(ds.find(x=>x.i>ts[0].i&&x.i<ts[1].i)||{}).v||'':'';
+  let dd=preD||(ds.find(x=>!ts[0]||x.i<ts[0].i)||ds[0]||{}).v||'';
+  if(!dd){const prev=scan(txt.slice(0,m.index)).filter(x=>x.t==='d');if(prev.length)dd=prev[prev.length-1].v}
+  let from='',to='';const r=w.match(/\b([A-Z]{3})\s*(?:→|->|–|—|-|>|to|nach)\s*([A-Z]{3})\b/);
+  if(r&&!STOP.has(r[1])&&!STOP.has(r[2])){from=r[1];to=r[2]}else{const a=[...w.matchAll(/\(([A-Z]{3})\)/g)].map(x=>x[1]).filter(x=>!STOP.has(x));if(a.length>1){from=a[0];to=a[1]}}
+  const seat=(w.match(/(?:sitz(?:platz)?|seat)\s*:?\s*(\d{1,2}[A-K])\b/i)||[])[1],gate=(w.match(/\bgate\s*:?\s*([A-Z]?\d{1,3}[A-Z]?)\b/i)||[])[1],term=(w.match(/terminal\s*:?\s*(\d|[A-Z])\b/i)||[])[1];
+  return{fn:m[1]+' '+m[2],dd,dt,ad,at,from,to,note:[seat&&'Sitz '+seat,gate&&'Gate '+gate,term&&'Terminal '+term,pax].filter(Boolean).join(', '),sc:(from?1:0)+(dd?1:0)+(dt?1:0)}});
+ if(c.length>1)c=c.filter(x=>x.sc>0);
+ const best=new Map();c.forEach(x=>{const k=x.fn+'|'+x.dd;if(!best.has(k)||best.get(k).sc<x.sc)best.set(k,x)});
+ c=[...best.values()];c=c.filter(x=>x.dd||!c.some(y=>y.fn===x.fn&&y.dd));
+ return c.map(x=>({kind:'flights',title:x.fn+(x.from?' '+x.from+' → '+x.to:''),date:x.dd?x.dd+'T'+(x.dt||'00:00'):'',date2:x.at?(x.ad||x.dd)+'T'+x.at:'',ref,note:x.note}))}
+function hotelOf(txt){
+ let title='';const a=txt.match(/(?:booking|reservation|stay) at ([^\n.,]+?)(?: is| has| was|\.|,|\n|$)/i)||txt.match(/buchung (?:im|in der|in|bei) ([^\n.,]+?)(?: wurde| ist|\.|,|\n|$)/i);
+ if(a)title=a[1].trim();
+ if(!title){const l=txt.split('\n').map(s=>s.trim()).find(l=>l.length>=3&&l.length<=80&&/\b(hotel|resort|inn|lodge|hostel|suites?|apartments?|residence|motel|villa|b&b|pension|gasthof)\b/i.test(l)&&!/check|buchung|booking|confirm|bestätig|reservier|your |ihre |willkommen|thank|danke|price|preis|total|cancel|storn|policy|bedingung|@|http/i.test(l));if(l)title=l}
+ if(!title){const m=txt.match(/(?:unterkunft|property|accommodation|hotel)\s*:\s*(.+)/i);if(m)title=m[1].trim()}
+ const ci=after(txt,/check-?in|anreise|arrival date|ankunft(?:sdatum)?/i),co=after(txt,/check-?out|abreise(?:datum)?|departure date/i);
+ const ref=findRef(txt,'booking\\s*(?:id|number|no\\.?|ref(?:erence)?|code)?|confirmation\\s*(?:number|no\\.?|code)|buchungs\\s?(?:nummer|code)|reservierungs\\s?(?:nummer|code)|bestätigungs\\s?(?:nummer|code)|reservation\\s*(?:number|no\\.?|id)',/\d/);
+ const ad=txt.split('\n').map(s=>s.trim()).find(l=>l.length<90&&(/\b\d{1,4}\s+[A-Za-z .]{3,30}\s(?:street|st\.?|road|rd\.?|avenue|ave\.?|lane|drive|boulevard)\b/i.test(l)||/(?:straße|str\.|weg|platz|allee)\s*\d+/i.test(l)));
+ return[{kind:'hotels',title:title||'Hotel',date:ci,date2:co,ref,note:ad||''}]}
+function visaOf(txt){
+ const type=/evisitor/i.test(txt)?'eVisitor':/\beta\b/i.test(txt)?'ETA':/\besta\b/i.test(txt)?'ESTA':/visum/i.test(txt)?'Visum':'Visa';
+ let country='',bi=1e9;COUNTRIES.forEach(([l,r])=>{const m=new RegExp(r,'i').exec(txt);if(m&&m.index<bi){bi=m.index;country=l}});
+ const from=after(txt,/gültig ab|valid from|date of grant|grant date|issue date|issued|ausgestellt am|erteilt am|ausstellungsdatum/i,60),to=after(txt,/gültig bis|valid until|valid to|valid through|expiry date|expires?|expiration|ablaufdatum|läuft ab/i,60);
+ const ref=findRef(txt,'visa\\s*grant\\s*(?:number|no\\.?)|grant\\s*(?:number|no\\.?)|application\\s*(?:id|number|no\\.?)|transaction\\s*(?:reference|number)|antrags(?:nummer|id)|visum(?:s)?nummer|visa\\s*(?:number|no\\.?)|reference\\s*(?:number|no\\.?)|\\bTRN\\b',/\d/);
+ const sub=(txt.match(/subclass\s*(\d+)/i)||[])[1],stay=(txt.match(/(?:stay|aufenthalt)[^.\n]{0,40}?(\d+\s*(?:days|tage|tagen|months|monate|monaten))/i)||[])[1];
+ return[{kind:'visa',title:type+(country?' '+country:''),date:from,date2:to,ref,note:[sub&&'Subclass '+sub,stay&&'Aufenthalt '+stay].filter(Boolean).join(', ')}]}
+function parseDoc(raw){
+ const txt=String(raw||'').replace(/[\u00a0\u202f]/g,' ').replace(/[ \t]+/g,' ').trim();if(txt.length<10)return[];
+ const n=re=>(txt.match(re)||[]).length;
+ const sc={flights:n(FLIGHT)*3+n(/boarding|flug|flight|abflug|departure|e-?ticket|\bgate\b|terminal|\bpnr\b/gi),hotels:n(/hotel|check-?in|check-?out|zimmer|\broom\b|übernacht|\bnights?\b|nächte|unterkunft|booking\.com|airbnb|apartment/gi),visa:n(/visa|visum|evisitor|\beta\b|\besta\b|einreisegenehmigung|travel authori|grant/gi)*2};
+ const top=Object.keys(sc).sort((a,b)=>sc[b]-sc[a])[0];if(!sc[top])return[];
+ let r=top==='flights'?flightsOf(txt):top==='hotels'?hotelOf(txt):visaOf(txt);
+ if(top==='flights'&&!r.length){const m=txt.match(/\b([A-Z]{3})\s*(?:→|->|–|—|-|>|to|nach)\s*([A-Z]{3})\b/),d=firstDate(txt);if(m)r=[{kind:'flights',title:'Flug '+m[1]+' → '+m[2],date:d?d+'T00:00':'',date2:'',ref:findRef(txt,FREF,/^[A-Z0-9]{5,8}$/),note:''}]}
+ return r}
+g.parseDoc=parseDoc;if(typeof module!=='undefined')module.exports={parseDoc};
+})(typeof window!=='undefined'?window:globalThis);

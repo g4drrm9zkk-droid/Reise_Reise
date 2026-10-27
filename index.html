@@ -75,6 +75,7 @@ select{width:100%;padding:12px;border:1px solid var(--ln);border-radius:12px;bac
 <div class="sheet" id="sheet"><div id="form"></div></div>
 <div class="full" id="full"><div class="tb"><button onclick="shareCur()">Teilen / Öffnen in …</button><button onclick="closeFull()">Schließen</button></div><div id="fv"></div></div>
 <div class="lock" id="lock"><div><h2 style="margin:0">🔒 Reisebegleiter</h2><input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" oninput="chkPin()"><div id="pe"></div><button class="btn" onclick="wipe()">PIN vergessen?</button></div></div><div class="busy" id="busy"></div><div class="toast" id="toast"></div>
+<script src="parse.js"></script>
 <script>
 const TABS=[
 {k:'home',n:'Übersicht',e:'🏠'},
@@ -121,12 +122,32 @@ async function ai(f){const key=localStorage.getItem('rk');if(!key){settings();th
  const m=j.content.map(c=>c.text||'').join('').match(/\{[\s\S]*\}/);if(!m)throw new Error('Keine Daten erkannt.');return JSON.parse(m[0]).items||[]}
 const nd=(v,t)=>!v?'':t.dateOnly?String(v).slice(0,10):String(v).length===10?v+'T00:00':String(v).slice(0,16);
 const sortL=k=>S[k].sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
-async function importDoc(inp){const f=inp.files[0];inp.value='';if(!f)return;busy('Dokument wird gelesen …');
- try{const items=await ai(f);if(!items.length)throw new Error('Keine Reisedaten gefunden.');const fm=await saveFile(f);let first;
-  items.forEach(o=>{const k=K.includes(o.kind)?o.kind:'flights',t=TABS.find(x=>x.k===k),it={id:uid(),title:o.title||'Ohne Titel',date:nd(o.date,t),date2:nd(o.date2,t),ref:o.ref||'',note:o.note||'',files:[fm]};S[k].push(it);first=first||[k,it.id]});
-  K.forEach(sortL);save();busy();tab=first[0];render();toast(items.length+' Eintrag/Einträge angelegt – bitte kurz prüfen');openForm(first[0],first[1])}
+let pf=null;
+const LIBS={pdf:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'},WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',loaded={};
+function lib(k){return loaded[k]||(loaded[k]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=LIBS[k];s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>{delete loaded[k];no(new Error('Die Auslese-Komponente konnte nicht geladen werden. Beim ersten Mal wird Internet gebraucht.'))};document.head.appendChild(s)}))}
+async function pdfText(f){await lib('pdf');if(!pdfjsLib.GlobalWorkerOptions.workerSrc){const w=await(await fetch(WORKER)).blob();pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}
+ const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let t='';
+ for(let i=1;i<=Math.min(d.numPages,12);i++){const c=await(await d.getPage(i)).getTextContent();let y=null,l='';c.items.forEach(it=>{const yy=it.transform[5];if(y!==null&&Math.abs(yy-y)>3){t+=l+'\n';l=''}l+=it.str+' ';y=yy});t+=l+'\n'}
+ if(t.replace(/\s/g,'').length<20)throw new Error('Im PDF steckt kein lesbarer Text (gescannt?). Mach einen Screenshot davon und lies ihn als Foto ein.');return t}
+async function ocrText(f){if(!localStorage.rocr&&!confirm('Für Fotos wird einmalig eine Texterkennung geladen (ca. 20 MB, braucht Internet). Danach läuft sie lokal auf dem iPhone. Jetzt laden?'))return null;
+ busy('Texterkennung wird geladen und ausgeführt …');await lib('ocr');const w=await Tesseract.createWorker('deu+eng');try{const r=(await w.recognize(await shrink(f,2400,.9))).data.text;localStorage.rocr=1;return r}finally{await w.terminate()}}
+async function getText(f){const t=f.type;if(t==='application/pdf')return pdfText(f);if(t.startsWith('image/'))return ocrText(f);if(t.startsWith('text/'))return f.text();throw new Error('Dieses Dateiformat kann nicht ausgelesen werden. Hänge es im Eintrag manuell an.')}
+function importSheet(txt){$('form').innerHTML=`<h2 style="margin:0">Dokument einlesen</h2><p class="m">${localStorage.rengine==='claude'?'Methode: Claude online (Dateien werden an Anthropic gesendet).':'Methode: lokal auf dem iPhone – nichts wird gesendet.'}</p>
+ <label class="btn gap" for="imp">📄 PDF oder Foto wählen</label><input id="imp" type="file" accept="image/*,application/pdf,text/plain" hidden onchange="importDoc(this)">
+ <label>Oder Text einfügen (z. B. aus der Bestätigungs-Mail; in Fotos: Text markieren → Kopieren)</label><textarea id="imp_t" rows="7">${esc(txt||'')}</textarea>${pf?`<p class="m">Wird angehängt: ${esc(pf.name)}</p>`:''}
+ <div class="row"><button class="btn g" onclick="pf=null;closeForm()">Abbrechen</button><button class="btn" onclick="runText()">Text auslesen</button></div>`;$('sheet').classList.add('show')}
+async function importDoc(inp){const f=inp.files[0];inp.value='';if(!f)return;pf=f;closeForm();await run(f,null)}
+async function runText(){const t=$('imp_t').value.trim();if(!t)return alert('Bitte erst Text einfügen.');closeForm();await run(pf,t)}
+async function run(f,text){busy('Wird ausgelesen …');
+ try{let items,src=text;
+  if(localStorage.rengine==='claude'&&f&&text==null)items=await ai(f);
+  else{if(src==null){src=await getText(f);if(src===null){busy();importSheet();toast('Tipp: Text im Foto markieren → Kopieren → hier einfügen');return}}items=parseDoc(src)}
+  if(!items.length){busy();importSheet(src||'');alert('Keine Reisedaten erkannt. Prüf den Text unten, korrigiere ihn oder füge ihn aus der Quelle ein.');return}
+  const fm=f?await saveFile(f):null;let first;
+  items.forEach(o=>{const k=K.includes(o.kind)?o.kind:'flights',t=TABS.find(x=>x.k===k),it={id:uid(),title:o.title||'Ohne Titel',date:nd(o.date,t),date2:nd(o.date2,t),ref:o.ref||'',note:o.note||'',files:fm?[fm]:[]};S[k].push(it);first=first||[k,it.id]});
+  K.forEach(sortL);save();pf=null;busy();tab=first[0];render();toast(items.length+' Eintrag/Einträge angelegt – bitte kurz prüfen');openForm(first[0],first[1])}
  catch(e){busy();alert(e.message)}}
-const impBtn=()=>`<label class="btn g gap" for="imp">📄 Aus Dokument / Foto einlesen</label><input id="imp" type="file" accept="image/*,application/pdf" hidden onchange="importDoc(this)">`;
+const impBtn=()=>`<button class="btn g gap" onclick="importSheet()">📄 Aus Dokument / Foto einlesen</button>`;
 /* Anzeige */
 function head(){$('tn').textContent=S.trip.name||'Meine Reise';const d=S.trip.date?Math.ceil((new Date(S.trip.date)-new Date().setHours(0,0,0,0))/864e5):null;
  $('cdn').textContent=d===null?'–':d>0?d:d===0?'🎉':'✓';$('cdl').textContent=d===null?'Abreisedatum in ⚙️ setzen':d>0?(d===1?'Tag bis zur Abreise':'Tage bis zur Abreise'):d===0?'Heute geht es los!':'Reise läuft / vorbei'}
@@ -139,7 +160,7 @@ function list(t){const L=S[t.k];return(L.length?L.map(i=>card(t,i)).join(''):`<d
 function home(){const now=Date.now()-864e5,up=[];K.forEach(k=>S[k].forEach(i=>{if(i.date&&new Date(i.date)>=now)up.push([TABS.find(x=>x.k===k),i])}));up.sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
  const P=S.pack,n=P.filter(x=>x.d).length,nf=K.reduce((a,k)=>a+S[k].reduce((b,i)=>b+(i.files||[]).length,0),0);
  return nag()+`<div class="stats"><div><b>${S.flights.length}</b>Flüge</div><div><b>${S.hotels.length}</b>Hotels</div><div><b>${S.visa.length}</b>Visa</div><div><b>${nf}</b>Dateien</div></div>`+
- `<label class="card it" for="imp"><div class="ic" style="background:#5b5bf022">📄</div><div class="body"><b>Dokument oder Foto einlesen</b><div class="m">Buchung, Ticket oder Visum wählen – die Daten werden automatisch eingetragen.</div></div></label><input id="imp" type="file" accept="image/*,application/pdf" hidden onchange="importDoc(this)">`+
+ `<div class="card it" onclick="importSheet()"><div class="ic" style="background:#5b5bf022">📄</div><div class="body"><b>Dokument oder Foto einlesen</b><div class="m">Buchung, Ticket oder Visum wählen – die Daten werden automatisch eingetragen.</div></div></div>`+
  `<div class="card it" onclick="boarding()"><div class="ic" style="background:#3b82f622">🎫</div><div class="body"><b>Boarding-Modus</b><div class="m">Ticket des nächsten Flugs groß und schnell öffnen.</div></div></div><h2 class="s">Als Nächstes</h2>`+(up.length?up.slice(0,5).map(([t,i])=>card(t,i)).join(''):'<div class="empty card">Keine anstehenden Termine.</div>')+
  `<h2 class="s">Ausgaben</h2><div class="card" onclick="go('exp')"><b>${money(S.exp.reduce((a,e)=>a+e.a,0))}</b>${S.trip.budget?' <span class="m">von '+money(+S.trip.budget)+'</span>':''}</div><h2 class="s">Packliste</h2><div class="card" onclick="go('pack')"><b>${n} von ${P.length} gepackt</b><div class="bar"><div style="width:${P.length?Math.round(n/P.length*100):0}%"></div></div></div>`}
 function pack(){const L=S.pack,n=L.filter(x=>x.d).length;
@@ -218,12 +239,12 @@ function settings(){const ps=!!localStorage.rp;$('form').innerHTML=`<h2 style="m
  <label>Budget</label><input id="t_b" inputmode="decimal" value="${S.trip.budget||''}"><label>Währung (z. B. € oder AUD)</label><input id="t_c" value="${esc(S.trip.cur)}">
  <label>App-Sperre: PIN (4 Ziffern)</label><input id="t_p" type="password" inputmode="numeric" maxlength="4" placeholder="${ps?'PIN gesetzt – neue PIN zum Ändern':'leer = keine Sperre'}">${ps?'<button class="btn g gap" onclick="localStorage.removeItem(\'rp\');settings()">Sperre entfernen</button>':''}
  <p class="m">Vergessene PIN: Nur Zurücksetzen hilft (Daten weg). Mach vorher ein Backup.</p>
- <label>Claude-API-Schlüssel (fürs automatische Auslesen)</label><input id="t_k" type="password" value="${esc(localStorage.getItem('rk'))}" placeholder="sk-ant-…" autocapitalize="off"><p class="m">Bleibt nur auf diesem Gerät. Beim Auslesen wird das Dokument an Anthropic gesendet (Internet nötig, wenige Cent; Schlüssel unter console.anthropic.com).</p><label>Modell</label><input id="t_m" value="${esc(localStorage.getItem('rm')||'claude-sonnet-5-5')}">
+ <label>Auslese-Methode für Dokumente</label><select id="t_e"><option value="local" ${localStorage.rengine==='claude'?'':'selected'}>Lokal auf dem iPhone – nichts wird gesendet</option><option value="claude" ${localStorage.rengine==='claude'?'selected':''}>Claude online (genauer, braucht API-Schlüssel)</option></select><label>Claude-API-Schlüssel (nur für „Claude online“)</label><input id="t_k" type="password" value="${esc(localStorage.getItem('rk'))}" placeholder="sk-ant-…" autocapitalize="off"><p class="m">Bleibt nur auf diesem Gerät. Nur bei „Claude online“ wird das Dokument an Anthropic gesendet (Internet nötig, wenige Cent; Schlüssel unter console.anthropic.com).</p><label>Modell</label><input id="t_m" value="${esc(localStorage.getItem('rm')||'claude-sonnet-5-5')}">
  <h2 class="s">Daten</h2><button class="btn g gap" onclick="exportBk()">💾 Backup exportieren</button><label class="btn g gap" for="bki">📥 Backup importieren</label><input id="bki" type="file" accept=".json,application/json" hidden onchange="importBk(this)"><button class="btn g gap" onclick="exportIcs()">📅 Flüge &amp; Hotels in den Kalender (.ics)</button>
  <div class="row"><button class="btn g" onclick="closeForm()">Abbrechen</button><button class="btn" onclick="saveSet()">Speichern</button></div>`;$('sheet').classList.add('show')}
 async function saveSet(){const p=$('t_p').value;if(p&&!/^\d{4}$/.test(p))return alert('Die PIN muss aus genau 4 Ziffern bestehen.');
  S.trip.name=$('t_n').value.trim()||'Meine Reise';S.trip.date=$('t_d').value;S.trip.budget=parseFloat($('t_b').value.replace(',','.'))||0;S.trip.cur=$('t_c').value.trim()||'€';
- localStorage.setItem('rk',$('t_k').value.trim());localStorage.setItem('rm',$('t_m').value.trim());if(p)localStorage.setItem('rp',await hp(p));save();closeForm();render()}
+ localStorage.setItem('rengine',$('t_e').value);localStorage.setItem('rk',$('t_k').value.trim());localStorage.setItem('rm',$('t_m').value.trim());if(p)localStorage.setItem('rp',await hp(p));save();closeForm();render()}
 lock();
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
