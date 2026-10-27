@@ -67,6 +67,7 @@ select{width:100%;padding:12px;border:1px solid var(--ln);border-radius:12px;bac
 .cap{color:#111;font-size:20px;line-height:1.35}.cap b{font:700 30px ui-monospace,Menlo,monospace;letter-spacing:3px}
 .fl{display:flex;align-items:center;gap:10px;margin-top:6px}.fl small{display:block;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.4px}.fl b{font-size:15px}.fl .ar{color:var(--mu)}
 .gap2{position:relative;margin:-4px 16px;padding:7px 12px;border-radius:12px;background:#5b5bf018;color:var(--ac);font-size:13px;font-weight:600;text-align:center}.gap2.warn{background:#f59e0b2a;color:#b45309}.gap2.bad{background:#e5484d22;color:var(--dg)}
+#fv.sc{display:block;padding:6px 0;background:#e5e7eb;-webkit-overflow-scrolling:touch}#pdfc{width:max-content;min-width:100%}#pdfc canvas{display:block;margin:8px auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}#vim{display:block;margin:0 auto;width:100%;max-width:none;max-height:none;height:auto;background:#fff}.full .cap{padding:8px 12px;background:#fff}.tb{gap:6px}.tb button{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -75,7 +76,7 @@ select{width:100%;padding:12px;border:1px solid var(--ln);border-radius:12px;bac
 <main id="main"></main>
 <nav id="nav"></nav>
 <div class="sheet" id="sheet"><div id="form"></div></div>
-<div class="full" id="full"><div class="tb"><button onclick="shareCur()">Teilen / Öffnen in …</button><button onclick="closeFull()">Schließen</button></div><div id="fv"></div></div>
+<div class="full" id="full"><div class="tb"><button onclick="shareCur()">Teilen</button><span id="zb" style="display:none;gap:6px"><button onclick="zoom(-1)">−</button><button onclick="zoom(0)">Einpassen</button><button onclick="zoom(1)">+</button></span><button onclick="closeFull()">Schließen</button></div><div id="fv"></div></div>
 <div class="lock" id="lock"><div><h2 style="margin:0">🔒 Reisebegleiter</h2><input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" oninput="chkPin()"><div id="pe"></div><button class="btn" onclick="wipe()">PIN vergessen?</button></div></div><div class="busy" id="busy"></div><div class="toast" id="toast"></div>
 <script src="parse.js"></script>
 <script>
@@ -95,7 +96,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function save(){try{localStorage.setItem('reise',JSON.stringify(S))}catch(e){alert('Speicher voll.')}}
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),8000)}
 function busy(m){const b=$('busy');b.textContent=m||'';b.classList.toggle('show',!!m)}
 function fmt(v,d){if(!v)return'';const x=new Date(v);if(isNaN(x))return v;return d?x.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'}):x.toLocaleString('de-DE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
 /* Dateispeicher (IndexedDB) */
@@ -109,9 +110,20 @@ function shrink(f,max,q){return new Promise((ok,no)=>{const u=URL.createObjectUR
 async function saveFile(f){let blob=f,type=f.type||'application/octet-stream',name=f.name||'Datei';if(type.startsWith('image/')){blob=await shrink(f,1600,.8);type='image/jpeg'}const id=uid();await putF({id,name,type,blob});return{id,name,type}}
 const ico=f=>f.type.startsWith('image/')?'🖼️':f.type==='application/pdf'?'📕':'📄';
 let vid='',vurl='';
-async function openFile(id,cap){const f=await getF(id);if(!f)return alert('Datei nicht gefunden');vid=id;vurl=URL.createObjectURL(f.blob);
- $('fv').innerHTML=(cap?'<div class="cap">'+cap+'</div>':'')+(f.type.startsWith('image/')?`<img src="${vurl}" alt="">`:f.type==='application/pdf'?`<iframe src="${vurl}"></iframe>`:'<p>Keine Vorschau möglich.<br>Tippe oben auf „Teilen / Öffnen in …“.</p>');$('full').classList.add('show')}
-function closeFull(){$('full').classList.remove('show');$('fv').innerHTML='';vurl&&URL.revokeObjectURL(vurl)}
+let vz=1,vdoc=null,vtok=0,vkind='';
+async function openFile(id,cap){const f=await getF(id);if(!f)return alert('Datei nicht gefunden');vid=id;vz=1;vdoc=null;const tok=++vtok,pdf=f.type==='application/pdf',img=f.type.startsWith('image/'),hd=cap?'<div class="cap">'+cap+'</div>':'';vkind=img?'img':pdf?'pdf':'';
+ vurl&&URL.revokeObjectURL(vurl);vurl='';$('full').classList.add('show');$('zb').style.display=vkind?'flex':'none';
+ if(img){vurl=URL.createObjectURL(f.blob);$('fv').className='sc';$('fv').innerHTML=hd+`<img id="vim" src="${vurl}" alt="">`}
+ else if(pdf){$('fv').className='sc pdf';$('fv').innerHTML=hd+'<div id="pdfc"><p class="m" style="padding:24px">Seiten werden geladen …</p></div>';
+  try{await pdfLib();vdoc=await pdfjsLib.getDocument({data:await f.blob.arrayBuffer()}).promise;if(tok===vtok)await drawPdf(tok)}
+  catch(e){if(tok!==vtok)return;vurl=URL.createObjectURL(f.blob);vkind='';$('zb').style.display='none';$('fv').className='';$('fv').innerHTML=hd+`<iframe src="${vurl}"></iframe>`}}
+ else{$('fv').className='';$('fv').innerHTML=hd+'<p>Keine Vorschau möglich.<br>Tippe oben auf „Teilen“.</p>'}}
+async function drawPdf(tok){const c=$('pdfc');c.innerHTML='';const W=$('fv').clientWidth-16;
+ for(let p=1;p<=Math.min(vdoc.numPages,40);p++){if(tok!==vtok)return;const pg=await vdoc.getPage(p),v0=pg.getViewport({scale:1}),sc=W/v0.width*vz,dpr=Math.min(window.devicePixelRatio||1,2);let k=1;const w0=v0.width*sc*dpr,h0=v0.height*sc*dpr;if(w0*h0>16e6)k=Math.sqrt(16e6/(w0*h0));
+  const cv=document.createElement('canvas');cv.width=Math.floor(w0*k);cv.height=Math.floor(h0*k);cv.style.width=v0.width*sc+'px';cv.style.height=v0.height*sc+'px';c.appendChild(cv);
+  await pg.render({canvasContext:cv.getContext('2d'),viewport:pg.getViewport({scale:sc*dpr*k})}).promise}}
+function zoom(d){vz=d===0?1:Math.min(4,Math.max(.5,vz*(d>0?1.25:.8)));if(vkind==='img'){$('vim').style.width=100*vz+'%'}else if(vkind==='pdf'&&vdoc){drawPdf(++vtok)}}
+function closeFull(){$('full').classList.remove('show');$('fv').innerHTML='';$('fv').className='';vtok++;vdoc=null;vurl&&URL.revokeObjectURL(vurl);vurl=''}
 async function shareCur(){try{const f=await getF(vid);await navigator.share({files:[new File([f.blob],f.name,{type:f.type})]})}catch(e){}}
 /* Auslesen mit Claude */
 const PROMPT='Lies dieses Reisedokument. Antworte NUR mit JSON: {"items":[{"kind":"flights|hotels|visa","title":"","date":"","date2":"","ref":"","note":""}]}. flights: ein Eintrag je Flugsegment, title="Flugnummer Abflug → Ziel" (IATA-Codes), date=Abflug, date2=Ankunft (Format YYYY-MM-DDTHH:MM, Ortszeit), ref=Buchungscode, note=Passagier, Sitz, Gate, Terminal. hotels: title=Hotelname, date=Check-in, date2=Check-out (YYYY-MM-DD), ref=Buchungsnummer, note=Adresse. visa: title=Land und Visumart, date=gültig ab, date2=gültig bis (YYYY-MM-DD), ref=Nummer, note=Details. Unbekanntes leer lassen, nichts erfinden.';
@@ -124,19 +136,19 @@ async function ai(f){const key=localStorage.getItem('rk');if(!key){settings();th
  const m=j.content.map(c=>c.text||'').join('').match(/\{[\s\S]*\}/);if(!m)throw new Error('Keine Daten erkannt.');return JSON.parse(m[0]).items||[]}
 const nd=(v,t)=>!v?'':t.dateOnly?String(v).slice(0,10):String(v).length===10?v+'T00:00':String(v).slice(0,16);
 const sortL=k=>S[k].sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
-let pf=null;
+let pf=null,lastSrc='';
 const LIBS={pdf:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'},WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',loaded={};
 function lib(k){return loaded[k]||(loaded[k]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=LIBS[k];s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>{delete loaded[k];no(new Error('Die Auslese-Komponente konnte nicht geladen werden. Beim ersten Mal wird Internet gebraucht.'))};document.head.appendChild(s)}))}
-async function pdfText(f){await lib('pdf');if(!pdfjsLib.GlobalWorkerOptions.workerSrc){const w=await(await fetch(WORKER)).blob();pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}
- const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let t='';
- for(let i=1;i<=Math.min(d.numPages,12);i++){const c=await(await d.getPage(i)).getTextContent();let y=null,l='';c.items.forEach(it=>{const yy=it.transform[5];if(y!==null&&Math.abs(yy-y)>3){t+=l+'\n';l=''}l+=it.str+' ';y=yy});t+=l+'\n'}
+async function pdfLib(){await lib('pdf');if(!pdfjsLib.GlobalWorkerOptions.workerSrc){const w=await(await fetch(WORKER)).blob();pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}}
+async function pdfText(f){await pdfLib();const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let t='';
+ for(let i=1;i<=Math.min(d.numPages,40);i++){const c=await(await d.getPage(i)).getTextContent();t+=itemsToText(c.items.map(it=>({s:it.str,x:it.transform[4],y:it.transform[5],h:it.height||Math.abs(it.transform[3])||8})))+'\n'}
  if(t.replace(/\s/g,'').length<20)throw new Error('Im PDF steckt kein lesbarer Text (gescannt?). Mach einen Screenshot davon und lies ihn als Foto ein.');return t}
 async function ocrText(f){if(!localStorage.rocr&&!confirm('Für Fotos wird einmalig eine Texterkennung geladen (ca. 20 MB, braucht Internet). Danach läuft sie lokal auf dem iPhone. Jetzt laden?'))return null;
  busy('Texterkennung wird geladen und ausgeführt …');await lib('ocr');const w=await Tesseract.createWorker('deu+eng');try{const r=(await w.recognize(await shrink(f,2400,.9))).data.text;localStorage.rocr=1;return r}finally{await w.terminate()}}
 async function getText(f){const t=f.type;if(t==='application/pdf')return pdfText(f);if(t.startsWith('image/'))return ocrText(f);if(t.startsWith('text/'))return f.text();throw new Error('Dieses Dateiformat kann nicht ausgelesen werden. Hänge es im Eintrag manuell an.')}
 function importSheet(txt){$('form').innerHTML=`<h2 style="margin:0">Dokument einlesen</h2><p class="m">${localStorage.rengine==='claude'?'Methode: Claude online (Dateien werden an Anthropic gesendet).':'Methode: lokal auf dem iPhone – nichts wird gesendet.'}</p>
  <label class="btn gap" for="imp">📄 PDF oder Foto wählen</label><input id="imp" type="file" accept="image/*,application/pdf,text/plain" hidden onchange="importDoc(this)">
- <label>Oder Text einfügen (z. B. aus der Bestätigungs-Mail; in Fotos: Text markieren → Kopieren)</label><textarea id="imp_t" rows="7">${esc(txt||'')}</textarea>${pf?`<p class="m">Wird angehängt: ${esc(pf.name)}</p>`:''}
+ <label>Oder Text einfügen (z. B. aus der Bestätigungs-Mail; in Fotos: Text markieren → Kopieren)</label><textarea id="imp_t" rows="7">${esc(txt||'')}</textarea>${pf?`<p class="m">Wird angehängt: ${esc(pf.name)}</p>`:''}${lastSrc?`<details style="margin-top:10px"><summary class="m">🔍 Zuletzt erkannten Text ansehen</summary><textarea rows="8" readonly>${esc(lastSrc)}</textarea></details>`:''}
  <div class="row"><button class="btn g" onclick="pf=null;closeForm()">Abbrechen</button><button class="btn" onclick="runText()">Text auslesen</button></div>`;$('sheet').classList.add('show')}
 async function importDoc(inp){const f=inp.files[0];inp.value='';if(!f)return;pf=f;closeForm();await run(f,null)}
 async function runText(){const t=$('imp_t').value.trim();if(!t)return alert('Bitte erst Text einfügen.');closeForm();await run(pf,t)}
@@ -148,7 +160,7 @@ async function run(f,text){busy('Wird ausgelesen …');
   const fm=f?await saveFile(f):null;let first;
   items.forEach(o=>{const k=K.includes(o.kind)?o.kind:'flights',t=TABS.find(x=>x.k===k),it={id:uid(),title:o.title||'Ohne Titel',date0:nd(o.date0,t),date:nd(o.date,t),date2:nd(o.date2,t),ref:o.ref||'',note:o.note||'',files:fm?[fm]:[]},dup=S[k].find(x=>x.title===it.title&&x.date===it.date);
    if(dup){Object.assign(dup,{date0:it.date0||dup.date0,date2:it.date2||dup.date2,ref:it.ref||dup.ref,note:it.note||dup.note});if(fm&&!(dup.files||[]).some(f=>f.id===fm.id))(dup.files=dup.files||[]).push(fm);first=first||[k,dup.id]}else{S[k].push(it);first=first||[k,it.id]}});
-  K.forEach(sortL);save();pf=null;busy();tab=first[0];render();toast(items.length+' Eintrag/Einträge angelegt – bitte kurz prüfen');openForm(first[0],first[1])}
+  K.forEach(sortL);save();pf=null;lastSrc=src||'';busy();tab=first[0];render();toast(items.length+(items.length===1?' Eintrag angelegt':' Einträge angelegt')+' – bitte kurz prüfen'+(items.warn?'. ⚠️ '+items.warn+' (Erkannten Text findest du unter „Aus Dokument einlesen“.)':''));if(items.length===1)openForm(first[0],first[1])}
  catch(e){busy();alert(e.message)}}
 const impBtn=()=>`<button class="btn g gap" onclick="importSheet()">📄 Aus Dokument / Foto einlesen</button>`;
 /* Anzeige */
@@ -275,7 +287,7 @@ let ej=-1;function emgEdit(j){ej=j;const x=j>=0?S.emg[j]:{l:'',v:''};$('form').i
 function emgSave(){const x={l:$('e_l').value.trim(),v:$('e_v').value.trim()};if(!x.l)return;if(ej>=0)S.emg[ej]=x;else S.emg.push(x);save();emg()}
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-setTimeout(offStat,1500);addEventListener('online',offStat);addEventListener('offline',offStat);if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('controllerchange',offStat);
+setTimeout(offStat,1500);setTimeout(()=>{if(navigator.onLine)pdfLib().catch(()=>{})},4000);addEventListener('online',offStat);addEventListener('offline',offStat);if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('controllerchange',offStat);
 </script>
 </body>
 </html>
