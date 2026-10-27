@@ -20,20 +20,28 @@ const firstDate=s=>{const t=scan(s).find(x=>x.t==='d');return t?t.v:''};
 const after=(txt,re,n)=>{const m=re.exec(txt);return m?firstDate(txt.slice(m.index+m[0].length,m.index+m[0].length+(n||80))):''};
 function findRef(txt,labels,ok){const re=new RegExp('(?:'+labels+')\\s*[:#.]?\\s*([A-Za-z0-9][A-Za-z0-9\\-\\.]{4,19})','gi');let m;while((m=re.exec(txt))){const c=m[1].replace(/[.\-]+$/,'');if(c.length>=5&&ok.test(c))return c}return''}
 const FREF='buchungs\\s?(?:code|nummer|referenz)|booking\\s*(?:reference|ref\\.?|code|number)|confirmation\\s*(?:code|number|no\\.?)|reservation\\s*(?:code|number)|reservierungs\\s?(?:code|nummer)|bestätigungs\\s?(?:code|nummer)|\\bPNR\\b|record\\s*locator|buchung';
+const LAB={ci:/check-?in(?:\s+at|\s+ab)?|einchecken/i,bd:/boarding|einsteigen|einstieg/i,dep:/\bdeparture\b|\bdeparts\b|\babflug\b/i,arr:/\barrival\b|\barrives\b|\bankunft\b/i};
+function legs(txt){const re=/\bLeg\s+\d+\s+of\s+\d+/gi,ix=[];let m;while((m=re.exec(txt)))ix.push(m.index);
+ if(ix.length)return ix.map((s,k)=>({w:txt.slice(s,ix[k+1]||txt.length),s,leg:1}));
+ const ms=[...txt.matchAll(FLIGHT)];return ms.map((x,k)=>({w:txt.slice(x.index,Math.min(k+1<ms.length?ms[k+1].index:txt.length,x.index+700)),s:x.index,pre:txt.slice(Math.max(k?ms[k-1].index+ms[k-1][0].length:0,x.index-100),x.index)}))}
 function flightsOf(txt){
- const ms=[...txt.matchAll(FLIGHT)],ref=findRef(txt,FREF,/^[A-Z0-9]{5,8}$/),pax=(txt.match(/\b([A-ZÄÖÜ]{2,}\/[A-ZÄÖÜ]{2,}(?: (?:MR|MRS|MS|MISS|MSTR|HERR|FRAU))?)/)||[])[1];
- let c=ms.map((m,k)=>{const end=Math.min(k+1<ms.length?ms[k+1].index:txt.length,m.index+700),w=txt.slice(m.index,end),T=scan(w);const prevEnd=k?ms[k-1].index+ms[k-1][0].length:0,pre=scan(txt.slice(Math.max(prevEnd,m.index-100),m.index)).reverse(),lD=pre.find(x=>x.t==='d'),lT=pre.find(x=>x.t==='t'),preD=lD&&(!lT||lT.i<lD.i)?lD.v:'';
-  const ts=T.filter(x=>x.t==='t'),ds=T.filter(x=>x.t==='d'),dt=ts[0]?ts[0].v:'',at=ts[1]?ts[1].v:'',ad=ts[1]?(ds.find(x=>x.i>ts[0].i&&x.i<ts[1].i)||{}).v||'':'';
-  let dd=preD||(ds.find(x=>!ts[0]||x.i<ts[0].i)||ds[0]||{}).v||'';
-  if(!dd){const prev=scan(txt.slice(0,m.index)).filter(x=>x.t==='d');if(prev.length)dd=prev[prev.length-1].v}
-  let from='',to='';const r=w.match(/\b([A-Z]{3})\s*(?:→|->|–|—|-|>|to|nach)\s*([A-Z]{3})\b/);
+ const ref=findRef(txt,FREF,/^[A-Z0-9]{5,8}$/),F1=new RegExp(FLIGHT.source);
+ let c=legs(txt).map(b=>{const w=b.w,m=w.match(F1)||w.match(/\bFlight\s*:?\s*([A-Z0-9]{2})\s?(\d{2,4})\b/);if(!m)return null;
+  const T=scan(w),ts=T.filter(x=>x.t==='t'),ds=T.filter(x=>x.t==='d'),L=Object.keys(LAB).map(k=>{const x=LAB[k].exec(w);return x&&{k,i:x.index}}).filter(Boolean).sort((a,b)=>a.i-b.i),n=L.length;
+  const pre=b.pre?scan(b.pre).reverse():[],lD=pre.find(x=>x.t==='d'),lT=pre.find(x=>x.t==='t'),preD=lD&&(!lT||lT.i<lD.i)?lD.v:'';let V={};
+  if(n&&L.some(l=>l.k==='dep')&&ts.length>=n&&(b.leg||(ds.length>=n&&!preD))){L.forEach((l,j)=>{V[l.k]={d:(ds.length>=n?ds[j]:(ds[0]||{})).v||preD,t:ts[j].v}})}
+  else{const dt=ts[0]?ts[0].v:'',at=ts[1]?ts[1].v:'',ad=ts[1]?(ds.find(x=>x.i>ts[0].i&&x.i<ts[1].i)||{}).v||'':'';let dd=preD||(ds.find(x=>!ts[0]||x.i<ts[0].i)||ds[0]||{}).v||'';
+   if(!dd){const p=scan(txt.slice(0,b.s)).filter(x=>x.t==='d');if(p.length)dd=p[p.length-1].v}V={dep:{d:dd,t:dt},arr:{d:ad||dd,t:at}}}
+  const D=V.dep||{},A=V.arr||{},C=V.bd||V.ci||{};let from='',to='';const r=w.match(/\b([A-Z]{3})\s*(?:→|->|–|—|-|>|to|nach)\s*([A-Z]{3})\b/);
   if(r&&!STOP.has(r[1])&&!STOP.has(r[2])){from=r[1];to=r[2]}else{const a=[...w.matchAll(/\(([A-Z]{3})\)/g)].map(x=>x[1]).filter(x=>!STOP.has(x));if(a.length>1){from=a[0];to=a[1]}}
-  const seat=(w.match(/(?:sitz(?:platz)?|seat)\s*:?\s*(\d{1,2}[A-K])\b/i)||[])[1],gate=(w.match(/\bgate\s*:?\s*([A-Z]?\d{1,3}[A-Z]?)\b/i)||[])[1],term=(w.match(/terminal\s*:?\s*(\d|[A-Z])\b/i)||[])[1];
-  return{fn:m[1]+' '+m[2],dd,dt,ad,at,from,to,note:[seat&&'Sitz '+seat,gate&&'Gate '+gate,term&&'Terminal '+term,pax].filter(Boolean).join(', '),sc:(from?1:0)+(dd?1:0)+(dt?1:0)}});
+  let seat=(w.match(/(?:sitz(?:platz)?|seat)\s*:?\s*(\d{1,2}[A-K])\b/i)||[])[1];if(!seat){const sl=/\b(?:seat|sitz)/i.exec(w);if(sl)seat=(w.slice(sl.index).match(/\b(\d{1,2}[A-K])\b/)||[])[1]}
+  const gate=(w.match(/\bgate\s*:?\s*([A-Z]?\d{1,3}[A-Z]?)\b/i)||[])[1],tm=[...w.matchAll(/terminal\s*:?\s*(\d|[A-Z])\b/gi)].map(x=>x[1]),term=tm.length?'Terminal '+tm[0]+(tm[1]&&tm[1]!==tm[0]?' → '+tm[1]:''):'';
+  const cb=w.match(/\b(Premium Economy|Economy|Business|First)(?: Class)?(?:\s+(Saver|Flex|Light|Basic|Classic|Lite|Special))?/i),bag=(w.match(/(?:baggage|gepäck|freigepäck)\s*:?\s*(\d+\s*(?:kgs?|pcs?|pieces?|stück))/i)||[])[1];
+  return{fn:m[1]+' '+m[2],dd:D.d||'',dt:D.t||'',ad:A.d||'',at:A.t||'',d0:C.d||'',t0:C.t||'',from,to,note:[cb&&(cb[1]+(cb[2]?' '+cb[2]:'')),seat&&'Sitz '+seat,term,gate&&'Gate '+gate,bag&&'Gepäck '+bag].filter(Boolean).join(', '),sc:(from?1:0)+(D.d?1:0)+(D.t?1:0)}}).filter(Boolean);
  if(c.length>1)c=c.filter(x=>x.sc>0);
  const best=new Map();c.forEach(x=>{const k=x.fn+'|'+x.dd;if(!best.has(k)||best.get(k).sc<x.sc)best.set(k,x)});
  c=[...best.values()];c=c.filter(x=>x.dd||!c.some(y=>y.fn===x.fn&&y.dd));
- return c.map(x=>({kind:'flights',title:x.fn+(x.from?' '+x.from+' → '+x.to:''),date:x.dd?x.dd+'T'+(x.dt||'00:00'):'',date2:x.at?(x.ad||x.dd)+'T'+x.at:'',ref,note:x.note}))}
+ return c.map(x=>({kind:'flights',title:x.fn+(x.from?' '+x.from+' → '+x.to:''),date0:x.t0&&x.d0?x.d0+'T'+x.t0:'',date:x.dd?x.dd+'T'+(x.dt||'00:00'):'',date2:x.at?(x.ad||x.dd)+'T'+x.at:'',ref,note:x.note}))}
 function hotelOf(txt){
  let title='';const a=txt.match(/(?:booking|reservation|stay) at ([^\n.,]+?)(?: is| has| was|\.|,|\n|$)/i)||txt.match(/buchung (?:im|in der|in|bei) ([^\n.,]+?)(?: wurde| ist|\.|,|\n|$)/i);
  if(a)title=a[1].trim();
