@@ -17,7 +17,7 @@
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,sans-serif;padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 input,textarea,button{font:inherit;color:var(--tx)}
 input,textarea{width:100%;padding:12px;border:1px solid var(--ln);border-radius:12px;background:var(--card)}
-.hero{background:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#06b6d4);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 34px;border-radius:0 0 30px 30px}
+.hero{background:var(--hbg,linear-gradient(135deg,#4f46e5,#7c3aed 55%,#06b6d4));background-size:cover;background-position:center;color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 34px;border-radius:0 0 30px 30px}
 .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;opacity:.85;letter-spacing:.6px;text-transform:uppercase}
 .top button{background:rgba(255,255,255,.2);border:0;border-radius:50%;width:36px;height:36px;font-size:17px}
 .hero h1{margin:10px 0 2px;font-size:28px}
@@ -74,11 +74,14 @@ input[type=date]::-webkit-date-and-time-value,input[type=datetime-local]::-webki
 .fab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(79,70,229,.45);z-index:3;display:none}.fab.show{display:block}
 .fl2{display:flex;align-items:center;gap:8px;margin-top:10px}.fl2>div{flex:1}.fl2 .r{text-align:right}.fl2 .ap{font-size:12px;color:var(--mu);font-weight:700;letter-spacing:.8px}.fl2 .tm{font-size:28px;font-weight:700;line-height:1.1}.fl2 .dt{font-size:12px;color:var(--mu)}.fl2 .ln{flex:0 0 64px;text-align:center;color:var(--mu);font-size:18px}.fl2 .ln small{font-size:10px;display:block;line-height:1.2}
 .next{background:linear-gradient(135deg,#4338ca,#7c3aed);color:#fff}.next .m,.next .dt,.next .ap,.next .ln{color:rgba(255,255,255,.78)}.next .row{margin-top:12px}
+.cdl{font-size:14px;font-weight:600;margin-top:6px;opacity:.95}
+.tiles{display:flex;gap:8px;margin-top:10px}.tiles>div{flex:1;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:16px;padding:10px 4px 8px;text-align:center}.tiles b{display:block;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}.tiles span{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+.swg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.swb{height:66px;border-radius:14px;border:2px solid transparent;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:flex-end;padding:7px;text-shadow:0 1px 3px rgba(0,0,0,.65);text-align:left;background-size:cover;background-position:center}.swb.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
 </style>
 </head>
 <body>
 <div class="hero"><div class="top"><span>Reisebegleiter</span><button onclick="settings()">⚙️</button></div>
-<h1 id="tn"></h1><div class="cd"><b id="cdn"></b><span id="cdl"></span></div><div class="pill" id="off"></div></div>
+<h1 id="tn"></h1><div class="cdl" id="cdl"></div><div class="tiles" id="tiles"></div><div class="pill" id="off"></div></div>
 <main id="main"></main>
 <button class="fab" id="fab" onclick="fabGo()">+</button>
 <nav id="nav"></nav>
@@ -142,7 +145,8 @@ async function ai(f){const key=localStorage.getItem('rk');if(!key){settings();th
  const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||'Fehler '+r.status);
  const m=j.content.map(c=>c.text||'').join('').match(/\{[\s\S]*\}/);if(!m)throw new Error('Keine Daten erkannt.');return JSON.parse(m[0]).items||[]}
 const nd=(v,t)=>!v?'':t.dateOnly?String(v).slice(0,10):String(v).length===10?v+'T00:00':String(v).slice(0,16);
-const sortL=k=>S[k].sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
+const sk=(k,i)=>{if(!i.date)return Infinity;const v=k==='flights'?tt(i.date,ap(i)[0]):new Date(i.date);return isNaN(v)?Infinity:+v};
+const sortL=k=>S[k].sort((a,b)=>sk(k,a)-sk(k,b));
 let pf=null,lastSrc='';
 const LIBS={pdf:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'},WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',loaded={};
 function lib(k){return loaded[k]||(loaded[k]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=LIBS[k];s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>{delete loaded[k];no(new Error('Die Auslese-Komponente konnte nicht geladen werden. Beim ersten Mal wird Internet gebraucht.'))};document.head.appendChild(s)}))}
@@ -164,6 +168,7 @@ async function run(f,text){busy('Wird ausgelesen …');
   if(localStorage.rengine==='claude'&&f&&text==null)items=await ai(f);
   else{if(src==null){src=await getText(f);if(src===null){busy();importSheet();toast('Tipp: Text im Foto markieren → Kopieren → hier einfügen');return}}items=parseDoc(src)}
   if(!items.length){busy();importSheet(src||'');alert('Keine Reisedaten erkannt. Prüf den Text unten, korrigiere ihn oder füge ihn aus der Quelle ein.');return}
+  const old=items.filter(o=>[o.date,o.date2].some(d=>d&&new Date(d)<Date.now()-60*864e5));if(old.length)items.warn=(items.warn?items.warn+' ':'')+'Datum liegt in der Vergangenheit bei: '+old.map(o=>o.title).join(', ')+'.';
   const fm=f?await saveFile(f):null;let first;
   items.forEach(o=>{const k=K.includes(o.kind)?o.kind:'flights',t=TABS.find(x=>x.k===k),it={id:uid(),title:o.title||'Ohne Titel',date0:nd(o.date0,t),date:nd(o.date,t),date2:nd(o.date2,t),ref:o.ref||'',note:o.note||'',files:fm?[fm]:[]},dup=S[k].find(x=>x.title===it.title&&x.date===it.date);
    if(dup){Object.assign(dup,{date0:it.date0||dup.date0,date2:it.date2||dup.date2,ref:it.ref||dup.ref,note:it.note||dup.note});if(fm&&!(dup.files||[]).some(f=>f.id===fm.id))(dup.files=dup.files||[]).push(fm);first=first||[k,dup.id]}else{S[k].push(it);first=first||[k,it.id]}});
@@ -171,16 +176,15 @@ async function run(f,text){busy('Wird ausgelesen …');
  catch(e){busy();alert(e.message)}}
 const impBtn=()=>`<button class="btn g gap" onclick="importSheet()">📄 Aus Dokument / Foto einlesen</button>`;
 /* Anzeige */
-function head(){$('tn').textContent=S.trip.name||'Meine Reise';const sd=S.trip.date||((S.flights[0]||{}).date||'').slice(0,10),d=sd?Math.ceil((new Date(sd)-new Date().setHours(0,0,0,0))/864e5):null;
- $('cdn').textContent=d===null?'–':d>0?d:d===0?'🎉':'✓';$('cdl').textContent=d===null?'Abreisedatum in ⚙️ setzen':d>0?(d===1?'Tag bis zur Abreise':'Tage bis zur Abreise'):d===0?'Heute geht es los!':'Reise läuft / vorbei'}
+function head(){$('tn').textContent=S.trip.name||'Meine Reise';cdTick()}
 function nav(){$('nav').innerHTML=TABS.map(t=>`<button class="${t.k===tab?'on':''}" onclick="go('${t.k}')"><span>${t.e}</span>${t.n}</button>`).join('')}
 function go(k){tab=k;render();scrollTo(0,0)}
 function render(){head();nav();$('fab').classList.toggle('show',tab!=='home'&&tab!=='pack');const t=TABS.find(x=>x.k===tab);$('main').innerHTML=tab==='home'?home():tab==='pack'?pack():tab==='exp'?exp():list(t)}
 const chips=i=>(i.files||[]).length?`<div class="chips">${i.files.map(f=>`<span class="chip" onclick="event.stopPropagation();openFile('${f.id}')">${ico(f)} ${esc(f.name)}</span>`).join('')}</div>`:'';
-function card(t,i){const f=t.k==='flights',m=f?`${flBlock(i)}${i.date0?`<div class="m" style="margin-top:8px">🚪 Check-in / Boarding ab ${fmtT(i.date0)}</div>`:''}`:`<div class="m">${fmt(i.date,t.dateOnly)}${i.date2?' → '+fmt(i.date2,t.dateOnly):''}</div>${extra(t,i)}`;
+function card(t,i){const f=t.k==='flights',m=f?`${flBlock(i)}${far(i)?'<div class="m" style="color:var(--dg);margin-top:6px">⚠️ Abflug und Ankunft liegen weit auseinander – bitte Datum prüfen</div>':''}${i.date0?`<div class="m" style="margin-top:8px">🚪 Check-in / Boarding ab ${fmtT(i.date0)}</div>`:''}`:`<div class="m">${fmt(i.date,t.dateOnly)}${i.date2?' → '+fmt(i.date2,t.dateOnly):''}</div>${extra(t,i)}`;
  return`<div class="card it" onclick="openForm('${t.k}','${i.id}')"><div class="ic" style="background:${t.c}22">${t.e}</div><div class="body"><h3>${esc(i.title)}</h3>${m}${i.note?`<div class="m">${esc(i.note)}</div>`:''}${i.ref?`<div class="ref">${esc(i.ref)}</div>`:''}${chips(i)}</div></div>`}
 function list(t){const L=S[t.k];return(L.length?L.map((i,j)=>(t.k==='flights'&&j?gap(L[j-1],i):'')+card(t,i)).join(''):`<div class="empty card">${t.e}<br>Noch kein ${t.t} gespeichert.</div>`)+`<button class="btn gap" onclick="openForm('${t.k}')">+ ${t.t} hinzufügen</button>`+impBtn()}
-function home(){const now=Date.now()-864e5,up=[];K.forEach(k=>S[k].forEach(i=>{if(i.date&&new Date(i.date)>=now)up.push([TABS.find(x=>x.k===k),i])}));up.sort((a,b)=>new Date(a[1].date)-new Date(b[1].date));
+function home(){const now=Date.now()-864e5,up=[];K.forEach(k=>S[k].forEach(i=>{if(i.date&&new Date(i.date)>=now)up.push([TABS.find(x=>x.k===k),i])}));up.sort((a,b)=>sk(a[0].k,a[1])-sk(b[0].k,b[1]));
  const P=S.pack,n=P.filter(x=>x.d).length,nf=K.reduce((a,k)=>a+S[k].reduce((b,i)=>b+(i.files||[]).length,0),0);
  return nag()+nextCard()+`<div class="stats"><div><b>${S.flights.length}</b>Flüge</div><div><b>${S.hotels.length}</b>Hotels</div><div><b>${S.visa.length}</b>Visa</div><div><b>${nf}</b>Dateien</div></div>`+
  `<div class="card it" onclick="importSheet()"><div class="ic" style="background:#5b5bf022">📄</div><div class="body"><b>Dokument oder Foto einlesen</b><div class="m">Buchung, Ticket oder Visum wählen – die Daten werden automatisch eingetragen.</div></div></div>`+
@@ -243,7 +247,7 @@ async function out(blob,name){const f=new File([blob],name,{type:blob.type});if(
 async function exportBk(){busy('Backup wird erstellt …');try{const fs=await tx('readonly',s=>s.getAll()),files=[];for(const f of fs)files.push({id:f.id,name:f.name,type:f.type,data:await b64(f.blob)});
  const blob=new Blob([JSON.stringify({v:1,S,files})],{type:'application/json'});busy();await out(blob,'reise-backup-'+td()+'.json');localStorage.setItem('rb',Date.now());render()}catch(e){busy();if(e.name!=='AbortError')alert(e.message)}}
 async function importBk(inp){const f=inp.files[0];inp.value='';if(!f||!confirm('Die aktuellen Daten werden durch das Backup ersetzt. Fortfahren?'))return;busy('Wird wiederhergestellt …');
- try{const j=JSON.parse(await f.text());if(!j.S)throw new Error('Keine gültige Backup-Datei.');for(const x of j.files||[]){const b=await(await fetch('data:'+x.type+';base64,'+x.data)).blob();await putF({id:x.id,name:x.name,type:x.type,blob:b})}S=j.S;norm();save();busy();closeForm();render();toast('Backup wiederhergestellt')}catch(e){busy();alert(e.message)}}
+ try{const j=JSON.parse(await f.text());if(!j.S)throw new Error('Keine gültige Backup-Datei.');for(const x of j.files||[]){const b=await(await fetch('data:'+x.type+';base64,'+x.data)).blob();await putF({id:x.id,name:x.name,type:x.type,blob:b})}S=j.S;norm();save();busy();closeForm();applyBg();render();toast('Backup wiederhergestellt')}catch(e){busy();alert(e.message)}}
 async function exportIcs(){const z=new Date().toISOString().replace(/[-:]|\.\d+/g,''),e=s=>String(s||'').replace(/[\\,;]/g,'\\$&').replace(/\n/g,'\\n'),dt=v=>v.replace(/[-:]/g,'')+'00',dd=v=>v.replace(/-/g,'');let o='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Reise//DE\r\n';
  S.flights.forEach(i=>{if(!i.date)return;const[a,b]=ap(i),u=(v,c)=>TZ[c]?utc(v,TZ[c]).toISOString().replace(/[-:]|\.\d+/g,''):dt(v),en=i.date2?u(i.date2,b):'';o+=`BEGIN:VEVENT\r\nUID:${i.id}@reise\r\nDTSTAMP:${z}\r\nDTSTART:${u(i.date,a)}\r\n${en?'DTEND:'+en+'\r\n':''}SUMMARY:✈️ ${e(i.title)}\r\nDESCRIPTION:${e('Buchung: '+i.ref+' '+i.note)}\r\nEND:VEVENT\r\n`});
  S.hotels.forEach(i=>{if(i.date&&i.date2)o+=`BEGIN:VEVENT\r\nUID:${i.id}@reise\r\nDTSTAMP:${z}\r\nDTSTART;VALUE=DATE:${dd(i.date)}\r\nDTEND;VALUE=DATE:${dd(i.date2)}\r\nSUMMARY:🏨 ${e(i.title)}\r\nDESCRIPTION:${e('Buchung: '+i.ref+' '+i.note)}\r\nEND:VEVENT\r\n`});
@@ -263,7 +267,7 @@ function settings(){const ps=!!localStorage.rp;$('form').innerHTML=`<h2 style="m
  <label>App-Sperre: PIN (4 Ziffern)</label><input id="t_p" type="password" inputmode="numeric" maxlength="4" placeholder="${ps?'PIN gesetzt – neue PIN zum Ändern':'leer = keine Sperre'}">${ps?'<button class="btn g gap" onclick="localStorage.removeItem(\'rp\');settings()">Sperre entfernen</button>':''}
  <p class="m">Vergessene PIN: Nur Zurücksetzen hilft (Daten weg). Mach vorher ein Backup.</p>
  <label>Auslese-Methode für Dokumente</label><select id="t_e"><option value="local" ${localStorage.rengine==='claude'?'':'selected'}>Lokal auf dem iPhone – nichts wird gesendet</option><option value="claude" ${localStorage.rengine==='claude'?'selected':''}>Claude online (genauer, braucht API-Schlüssel)</option></select><label>Claude-API-Schlüssel (nur für „Claude online“)</label><input id="t_k" type="password" value="${esc(localStorage.getItem('rk'))}" placeholder="sk-ant-…" autocapitalize="off"><p class="m">Bleibt nur auf diesem Gerät. Nur bei „Claude online“ wird das Dokument an Anthropic gesendet (Internet nötig, wenige Cent; Schlüssel unter console.anthropic.com).</p><label>Modell</label><input id="t_m" value="${esc(localStorage.getItem('rm')||'claude-sonnet-5-5')}">
- <h2 class="s">Daten</h2><button class="btn g gap" onclick="exportBk()">💾 Backup exportieren</button><label class="btn g gap" for="bki">📥 Backup importieren</label><input id="bki" type="file" accept=".json,application/json" hidden onchange="importBk(this)"><button class="btn g gap" onclick="exportIcs()">📅 Flüge &amp; Hotels in den Kalender (.ics)</button><button class="btn g gap" onclick="updApp()">🔄 App aktualisieren</button><p class="m" style="text-align:center">Version ${APP_V}</p>
+ <h2 class="s">Hintergrund</h2><div class="swg">${Object.entries(BG).map(([k,[n,c]])=>`<button class="swb${(S.trip.bg||'indigo')===k?' on':''}" data-k="${k}" style="background:${c}" onclick="pickBg('${k}')">${n}</button>`).join('')}<label class="swb${S.trip.bg==='photo'?' on':''}" data-k="photo" for="bgf" style="background:var(--card);color:var(--tx);text-shadow:none">📷 Eigenes Foto</label></div><input id="bgf" type="file" accept="image/*" hidden onchange="bgPhoto(this)"><h2 class="s">Daten</h2><button class="btn g gap" onclick="exportBk()">💾 Backup exportieren</button><label class="btn g gap" for="bki">📥 Backup importieren</label><input id="bki" type="file" accept=".json,application/json" hidden onchange="importBk(this)"><button class="btn g gap" onclick="exportIcs()">📅 Flüge &amp; Hotels in den Kalender (.ics)</button><button class="btn g gap" onclick="updApp()">🔄 App aktualisieren</button><p class="m" style="text-align:center">Version ${APP_V}</p>
  <div class="row"><button class="btn g" onclick="closeForm()">Abbrechen</button><button class="btn" onclick="saveSet()">Speichern</button></div>`;$('sheet').classList.add('show')}
 async function saveSet(){const p=$('t_p').value;if(p&&!/^\d{4}$/.test(p))return alert('Die PIN muss aus genau 4 Ziffern bestehen.');
  S.trip.name=$('t_n').value.trim()||'Meine Reise';S.trip.date=$('t_d').value;S.trip.budget=parseFloat($('t_b').value.replace(',','.'))||0;S.trip.cur=$('t_c').value.trim()||'€';S.trip.home=$('t_h').value.trim()||'€';S.trip.rate=parseFloat($('t_r').value.replace(',','.'))||0;
@@ -279,7 +283,7 @@ const fmtT=v=>{if(!v)return'–';const x=new Date(v);return isNaN(x)?v:x.toLocal
 function dh(ms){const m=Math.round(ms/6e4),d=Math.floor(m/1440),h=Math.floor(m%1440/60),n=m%60;return d?d+(d===1?' Tag':' Tage')+(h?' '+h+' Std.':''):h?h+' Std.'+(n?' '+n+' Min.':''):n+' Min.'}
 function fdur(i){const[a,b]=ap(i);if(!i.date||!i.date2||!TZ[a]||!TZ[b])return'';const ms=tt(i.date2,b)-tt(i.date,a);return ms>0&&ms<30*36e5?`<div class="m">⏱ Flugdauer ${dh(ms)}</div>`:''}
 function gap(a,b){if(!a.date2||!b.date)return'';const at=ap(a)[1],bf=ap(b)[0],same=at&&at===bf,ex=same||(TZ[at]&&TZ[bf]),ms=tt(b.date,bf)-tt(a.date2,at);if(isNaN(ms))return'';
- const bad=ms<0,warn=same&&ms<90*6e4,tx=bad?'⚠️ Zeiten überschneiden sich – bitte prüfen':'⏳ Aufenthalt'+(same?' in '+at:at&&bf?' ('+at+' → '+bf+')':'')+': '+dh(ms)+(warn?' – knapp!':'')+(ex?'':' (ca.)');
+ const bad=ms<0,warn=same&&ms<90*6e4,tx=bad?'⚠️ Überschneidung: '+esc(a.title)+' endet nach dem Start von '+esc(b.title)+' – Datum/Jahr prüfen':'⏳ Aufenthalt'+(same?' in '+at:at&&bf?' ('+at+' → '+bf+')':'')+': '+dh(ms)+(warn?' – knapp!':'')+(ex?'':' (ca.)');
  return`<div class="gap2${bad?' bad':warn?' warn':''}">${tx}</div>`}
 function extra(t,i){if(t.k==='hotels'&&i.date&&i.date2){const n=Math.round((new Date(i.date2)-new Date(i.date))/864e5);return n>0?`<div class="m">🌙 ${n} ${n===1?'Nacht':'Nächte'}</div>`:''}
  if(t.k==='visa'&&i.date2){const d=Math.ceil((new Date(i.date2)-Date.now())/864e5);return d<0?'<div class="m" style="color:var(--dg)">⚠️ abgelaufen</div>':`<div class="m">✅ noch ${d} Tage gültig</div>`}return''}
@@ -299,8 +303,39 @@ function flBlock(i){const[a,b]=ap(i),d=fms(i);return`<div class="fl2"><div><div 
 function nextCard(){const f=S.flights.find(i=>i.date&&tt(i.date,ap(i)[0])>Date.now()-6*36e5);if(!f)return'';const ms=tt(f.date,ap(f)[0])-Date.now();
  return`<div class="card next"><div class="m">Nächster Flug · ${ms>0?'in '+dh(ms):'läuft gerade / startet jetzt'}</div><div style="font-size:19px;font-weight:700;margin:2px 0">${esc(f.title)}</div>${flBlock(f)}${f.date0?`<div class="m" style="margin-top:8px">🚪 Check-in / Boarding ab ${fmtT(f.date0)}</div>`:''}${f.note?`<div class="m">${esc(f.note)}</div>`:''}<div class="row"><button class="btn g" onclick="boarding()">🎫 Ticket öffnen</button><button class="btn g" onclick="openForm('flights','${f.id}')">Details</button></div></div>`}
 function fabGo(){tab==='exp'?openExp():openForm(tab)}
-const APP_V='8';
+const APP_V='9';
 async function updApp(){if(!navigator.onLine)return alert('Zum Aktualisieren brauchst du Internet.');try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update()))}catch(e){}location.reload()}
+/* ---- Countdown, Hintergründe, Datums-Reparatur ---- */
+const pad2=n=>String(n).padStart(2,'0');
+function cdTarget(){const now=Date.now();for(const i of S.flights){if(!i.date)continue;const a=ap(i)[0],dep=+tt(i.date,a),bd=i.date0?+tt(i.date0,a):dep;if(isNaN(dep))continue;
+  if(now<bd)return{t:bd,l:'Boarding · '+i.title+' · '+fmtT(i.date0||i.date)};
+  if(now<dep)return{t:dep,l:'Boarding läuft – Abflug · '+i.title}}
+ const sd=S.trip.date;return sd&&new Date(sd)>now?{t:+new Date(sd),l:'Abreise'}:null}
+function cdTick(){const g=cdTarget(),el=$('tiles');if(!g){$('cdl').textContent=S.flights.length?'Alle Flüge liegen hinter dir 🎉':'Flug hinzufügen für den Boarding-Countdown';el.innerHTML='';return}
+ const ms=Math.max(0,g.t-Date.now()),v=[[Math.floor(ms/864e5),'Tage'],[Math.floor(ms%864e5/36e5),'Std'],[Math.floor(ms%36e5/6e4),'Min'],[Math.floor(ms%6e4/1e3),'Sek']];
+ $('cdl').textContent='✈️ '+g.l;if(el.children.length!==4)el.innerHTML=v.map(()=>'<div><b></b><span></span></div>').join('');
+ v.forEach(([n,l],j)=>{el.children[j].firstChild.textContent=j?pad2(n):n;el.children[j].lastChild.textContent=l})}
+setInterval(cdTick,1000);
+const SC=s=>"url('data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">'+s+'</svg>')+"')",SH='linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.30))';
+const BG={indigo:['Standard','linear-gradient(135deg,#4f46e5,#7c3aed 55%,#06b6d4)'],sunset:['Sonnenuntergang','linear-gradient(160deg,#ff7e5f,#feb47b 40%,#6a3093)'],ocean:['Ozean','linear-gradient(160deg,#0f2027,#2c7a9b 50%,#00c6ff)'],forest:['Wald','linear-gradient(160deg,#134e5e,#1e7e4f 55%,#71b280)'],rose:['Rosé','linear-gradient(140deg,#ee0979,#ff6a00)'],
+ night:['Nacht','radial-gradient(circle at 20% 30%,#fff 0 1px,transparent 2px),radial-gradient(circle at 70% 20%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 85% 60%,#fff 0 1px,transparent 2px),radial-gradient(circle at 40% 70%,#fff 0 1px,transparent 2px),linear-gradient(160deg,#0f0c29,#302b63 55%,#24243e)'],
+ mountains:['Berge',SH+','+SC('<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1b4b"/><stop offset=".6" stop-color="#7c3aed"/><stop offset="1" stop-color="#fb923c"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><circle cx="300" cy="130" r="30" fill="#fde68a" opacity=".9"/><path d="M0 230L70 150 130 210 200 120 280 220 340 170 400 230V300H0Z" fill="#312e81" opacity=".85"/><path d="M0 262L90 205 160 250 240 195 330 255 400 220V300H0Z" fill="#1e1b4b"/>')],
+ outback:['Outback',SH+','+SC('<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c2d12"/><stop offset=".55" stop-color="#f97316"/><stop offset="1" stop-color="#fde68a"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><circle cx="90" cy="150" r="38" fill="#fff7d6" opacity=".9"/><path d="M0 235C60 205 120 215 190 232S330 250 400 218V300H0Z" fill="#b45309" opacity=".85"/><path d="M0 268C80 242 150 255 230 266S340 275 400 255V300H0Z" fill="#7c2d12"/>')],
+ waves:['Meer',SH+','+SC('<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><circle cx="310" cy="95" r="26" fill="#fef9c3" opacity=".9"/><path d="M0 200C50 180 100 220 160 200S280 180 400 205V300H0Z" fill="#fff" opacity=".18"/><path d="M0 235C60 215 120 250 190 232S320 215 400 240V300H0Z" fill="#fff" opacity=".22"/><path d="M0 268C70 252 130 280 210 266S340 255 400 272V300H0Z" fill="#0c4a6e" opacity=".6"/>')]};
+let bgUrl='';
+async function applyBg(){const id=S.trip.bg||'indigo';let v=(BG[id]||BG.indigo)[1];
+ if(id==='photo'){try{const f=await getF('bg');if(f){bgUrl&&URL.revokeObjectURL(bgUrl);bgUrl=URL.createObjectURL(f.blob);v="linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.42)),url('"+bgUrl+"')"}else v=BG.indigo[1]}catch(e){v=BG.indigo[1]}}
+ document.documentElement.style.setProperty('--hbg',v)}
+const bgMark=k=>document.querySelectorAll('.swb').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+function pickBg(k){S.trip.bg=k;save();applyBg();bgMark(k)}
+async function bgPhoto(inp){const f=inp.files[0];inp.value='';if(!f)return;busy('Foto wird gespeichert …');try{await putF({id:'bg',name:'Hintergrund',type:'image/jpeg',blob:await shrink(f,1400,.8)});S.trip.bg='photo';save();await applyBg();bgMark('photo')}catch(e){alert(e.message)}busy()}
+const far=i=>i.date&&i.date2&&Math.abs(new Date(i.date2)-new Date(i.date))>36*36e5;
+function healFlights(){const now=Date.now(),ok=d=>new Date(d)>now-60*864e5,fx=[];
+ S.flights.forEach(i=>{if(!i.date||!i.date2)return;const dd=i.date.slice(0,10),ad=i.date2.slice(0,10);if(Math.abs(new Date(dd)-new Date(ad))<=2*864e5)return;
+  if(ok(ad)&&!ok(dd)){i.date=ad+i.date.slice(10);fx.push(i.title)}else if(ok(dd)&&!ok(ad)){i.date2=dd+i.date2.slice(10);fx.push(i.title)}
+  if(i.date0&&Math.abs(new Date(i.date0.slice(0,10))-new Date(i.date.slice(0,10)))>2*864e5)i.date0=i.date.slice(0,10)+i.date0.slice(10)});
+ if(fx.length){K.forEach(sortL);save();setTimeout(()=>toast('Datum korrigiert: '+fx.join(', ')),800)}}
+applyBg();K.forEach(sortL);healFlights();
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 setTimeout(offStat,1500);setTimeout(()=>{if(navigator.onLine)pdfLib().catch(()=>{})},4000);addEventListener('online',offStat);addEventListener('offline',offStat);if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('controllerchange',offStat);
